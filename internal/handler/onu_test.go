@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/middleware"
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
 	"github.com/go-chi/chi/v5"
 )
@@ -119,8 +120,8 @@ func TestOnuHandler_GetByBoardIDAndPonID_WithContext(t *testing.T) {
 
 	// Create request with context values
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -138,8 +139,8 @@ func TestOnuHandler_GetByBoardIDAndPonID_InvalidQuery(t *testing.T) {
 
 	// Create request with invalid query parameter
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1?invalid_param=value", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -154,11 +155,8 @@ func TestOnuHandler_GetByBoardIDAndPonID_InvalidQuery(t *testing.T) {
 
 func TestOnuHandler_InterfaceCompliance(t *testing.T) {
 	// Verify that OnuHandler implements OnuHandlerInterface
-	var handler OnuHandlerInterface = NewOnuHandler(&mockOnuUsecase{})
-
-	if handler == nil {
-		t.Error("Expected non-nil handler")
-	}
+	var _ OnuHandlerInterface = NewOnuHandler(&mockOnuUsecase{})
+	// The fact that this compiles confirms interface compliance
 }
 
 func TestOnuHandler_ContextValues(t *testing.T) {
@@ -188,8 +186,8 @@ func TestOnuHandler_ContextValues(t *testing.T) {
 			handler := NewOnuHandler(usecase)
 
 			req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1", nil)
-			ctx := context.WithValue(req.Context(), "boardID", tt.boardID)
-			ctx = context.WithValue(ctx, "ponID", tt.ponID)
+			ctx := context.WithValue(req.Context(), middleware.BoardIDKey, tt.boardID)
+			ctx = context.WithValue(ctx, middleware.PonIDKey, tt.ponID)
 			req = req.WithContext(ctx)
 
 			rr := httptest.NewRecorder()
@@ -222,8 +220,8 @@ func TestOnuHandler_WithChiContext(t *testing.T) {
 	rctx.URLParams.Add("pon_id", "1")
 
 	ctx := context.WithValue(req.Context(), chi.RouteCtxKey, rctx)
-	ctx = context.WithValue(ctx, "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx = context.WithValue(ctx, middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -245,8 +243,8 @@ func TestOnuHandler_EmptyResponse(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -280,9 +278,9 @@ func TestOnuHandler_GetByBoardIDPonIDAndOnuID_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu/5", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
-	ctx = context.WithValue(ctx, "onuID", 5)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.OnuIDKey, 5)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -304,9 +302,9 @@ func TestOnuHandler_GetByBoardIDPonIDAndOnuID_NotFound(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu/99", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
-	ctx = context.WithValue(ctx, "onuID", 99)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.OnuIDKey, 99)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -333,8 +331,8 @@ func TestOnuHandler_GetEmptyOnuID_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id/empty", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -360,8 +358,8 @@ func TestOnuHandler_GetOnuIDAndSerialNumber_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id_sn", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -382,8 +380,8 @@ func TestOnuHandler_UpdateEmptyOnuID_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id/update", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -409,8 +407,8 @@ func TestOnuHandler_GetByBoardIDAndPonIDWithPaginate_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/paginate/board/1/pon/1?page=1&page_size=10", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -432,8 +430,8 @@ func TestOnuHandler_GetByBoardIDAndPonIDWithPaginate_NotFound(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/paginate/board/1/pon/1?page=99&page_size=10", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -454,8 +452,8 @@ func TestOnuHandler_DeleteCache_Success(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("DELETE", "/api/v1/board/1/pon/1", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -476,8 +474,8 @@ func TestOnuHandler_GetByBoardIDAndPonID_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -498,9 +496,9 @@ func TestOnuHandler_GetByBoardIDPonIDAndOnuID_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu/5", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
-	ctx = context.WithValue(ctx, "onuID", 5)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.OnuIDKey, 5)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -521,8 +519,8 @@ func TestOnuHandler_GetEmptyOnuID_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id/empty", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -543,8 +541,8 @@ func TestOnuHandler_GetOnuIDAndSerialNumber_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id_sn", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -565,8 +563,8 @@ func TestOnuHandler_UpdateEmptyOnuID_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("GET", "/api/v1/board/1/pon/1/onu_id/update", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -587,8 +585,8 @@ func TestOnuHandler_DeleteCache_Error(t *testing.T) {
 	handler := NewOnuHandler(usecase)
 
 	req := httptest.NewRequest("DELETE", "/api/v1/board/1/pon/1", nil)
-	ctx := context.WithValue(req.Context(), "boardID", 1)
-	ctx = context.WithValue(ctx, "ponID", 1)
+	ctx := context.WithValue(req.Context(), middleware.BoardIDKey, 1)
+	ctx = context.WithValue(ctx, middleware.PonIDKey, 1)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()

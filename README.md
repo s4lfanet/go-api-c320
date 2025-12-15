@@ -50,7 +50,7 @@ docker run -d -p 8081:8081 --name go-snmp-olt-zte-c320 \
 -e REDIS_MIN_IDLE_CONNECTIONS=200 -e REDIS_POOL_SIZE=12000 \
 -e REDIS_POOL_TIMEOUT=240 -e SNMP_HOST=x.x.x.x \
 -e SNMP_PORT=161 -e SNMP_COMMUNITY=xxxx \
-sumitroajiprabowo/go-snmp-olt-zte-c320:latest
+cepatkilatteknologi/snmp-olt-zte-c320:latest
 ```
 
 ### Production usage without external redis:
@@ -65,7 +65,7 @@ docker run -d -p 8081:8081 --name go-snmp-olt-zte-c320 \
 -e SNMP_HOST=snmp_host \
 -e SNMP_PORT=snmp_port \
 -e SNMP_COMMUNITY=snmp_community \
-sumitroajiprabowo/go-snmp-olt-zte-c320:latest
+cepatkilatteknologi/snmp-olt-zte-c320:latest
 ```
 
 

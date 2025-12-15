@@ -418,8 +418,8 @@ func TestGetEmptyOnuID_Success(t *testing.T) {
 	snmpRepo := &mockSnmpRepository{
 		WalkFunc: func(oid string, walkFunc func(pdu gosnmp.SnmpPDU) error) error {
 			// Simulate 2 ONUs registered (ID 1 and 2)
-			walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
-			walkFunc(gosnmp.SnmpPDU{Name: oid + ".2", Value: []byte("ONU2")})
+			_ = walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
+			_ = walkFunc(gosnmp.SnmpPDU{Name: oid + ".2", Value: []byte("ONU2")})
 			return nil
 		},
 	}
@@ -453,7 +453,7 @@ func TestGetOnuIDAndSerialNumber_Success(t *testing.T) {
 
 	snmpRepo := &mockSnmpRepository{
 		WalkFunc: func(oid string, walkFunc func(pdu gosnmp.SnmpPDU) error) error {
-			walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
+			_ = walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
 			return nil
 		},
 		GetFunc: func(oids []string) (*gosnmp.SnmpPacket, error) {
@@ -492,7 +492,7 @@ func TestUpdateEmptyOnuID_Success(t *testing.T) {
 
 	snmpRepo := &mockSnmpRepository{
 		WalkFunc: func(oid string, walkFunc func(pdu gosnmp.SnmpPDU) error) error {
-			walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
+			_ = walkFunc(gosnmp.SnmpPDU{Name: oid + ".1", Value: []byte("ONU1")})
 			return nil
 		},
 	}
@@ -521,7 +521,7 @@ func TestGetByBoardIDAndPonIDWithPagination_Success(t *testing.T) {
 	snmpRepo := &mockSnmpRepository{
 		WalkFunc: func(oid string, walkFunc func(pdu gosnmp.SnmpPDU) error) error {
 			for i := 1; i <= 10; i++ {
-				walkFunc(gosnmp.SnmpPDU{Name: oid + "." + string(rune(i)), Value: []byte("ONU")})
+				_ = walkFunc(gosnmp.SnmpPDU{Name: oid + "." + string(rune(i)), Value: []byte("ONU")})
 			}
 			return nil
 		},

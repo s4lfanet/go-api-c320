@@ -96,15 +96,15 @@ func TestValidateBoardPonParams(t *testing.T) {
 			// Create a test handler that checks context values
 			testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// If we get here, validation passed
-				boardIDInt := r.Context().Value("boardID")
-				ponIDInt := r.Context().Value("ponID")
+				boardIDInt := r.Context().Value(BoardIDKey)
+				ponIDInt := r.Context().Value(PonIDKey)
 
 				if boardIDInt == nil || ponIDInt == nil {
 					t.Error("Expected boardID and ponID in context")
 				}
 
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			})
 
 			// Wrap with validation middleware
@@ -211,14 +211,14 @@ func TestValidateOnuIDParam(t *testing.T) {
 			// Create a test handler
 			testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// If we get here, validation passed
-				onuIDInt := r.Context().Value("onuID")
+				onuIDInt := r.Context().Value(OnuIDKey)
 
 				if onuIDInt == nil {
 					t.Error("Expected onuID in context")
 				}
 
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			})
 
 			// Wrap with validation middleware

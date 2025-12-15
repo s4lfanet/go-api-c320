@@ -7,6 +7,14 @@ import (
 	"github.com/rs/xid"
 )
 
+// requestIDKey is the context key for request ID
+type requestIDKey string
+
+const (
+	// RequestIDKey is the context key for the request ID
+	RequestIDKey requestIDKey = "requestID"
+)
+
 // RequestID adds a unique request ID to each request for tracking and debugging
 // The request ID can be provided by the client via X-Request-ID header,
 // or will be generated automatically if not provided
@@ -24,7 +32,7 @@ func RequestID(next http.Handler) http.Handler {
 		w.Header().Set("X-Request-ID", requestID)
 
 		// Add request ID to request context for use in handlers and logging
-		ctx := context.WithValue(r.Context(), "requestID", requestID)
+		ctx := context.WithValue(r.Context(), RequestIDKey, requestID)
 
 		// Continue with the request
 		next.ServeHTTP(w, r.WithContext(ctx))

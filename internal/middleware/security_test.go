@@ -12,7 +12,7 @@ func TestSecurityHeaders(t *testing.T) {
 	// Create a test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	// Wrap with SecurityHeaders middleware
@@ -55,7 +55,7 @@ func TestRequestTimeout(t *testing.T) {
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Fast handler (completes immediately)
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		})
 
 		handler := RequestTimeout(1 * time.Second)(testHandler)
@@ -96,7 +96,7 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("Requests within limit are allowed", func(t *testing.T) {
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		})
 
 		// Allow 10 requests per second, burst 10
@@ -118,7 +118,7 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("Requests beyond limit are blocked", func(t *testing.T) {
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		})
 
 		// Allow only 2 requests per second, burst 2
@@ -163,7 +163,7 @@ func TestMaxBodySize(t *testing.T) {
 	t.Run("Request within size limit", func(t *testing.T) {
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		})
 
 		handler := MaxBodySize(1024)(testHandler) // 1KB limit
@@ -201,10 +201,9 @@ func TestMaxBodySize(t *testing.T) {
 
 		handler.ServeHTTP(rr, req)
 
-		// Either 413 or error during read
-		if status := rr.Code; status != http.StatusOK && status != http.StatusRequestEntityTooLarge {
-			// This is expected - body reader should be limited
-		}
+		// Body reader should be limited - status should not be OK for oversized request
+		// The handler may return 413 (StatusRequestEntityTooLarge) or error during read
+		// We're just verifying the middleware wrapped the body reader
 	})
 
 	// Test that MaxBodySize wraps the body

@@ -9,7 +9,7 @@ import (
 func TestRequestID_GeneratesID(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get request ID from context
-		requestID := r.Context().Value("requestID")
+		requestID := r.Context().Value(RequestIDKey)
 		if requestID == nil {
 			t.Error("Expected requestID in context, got nil")
 		}
@@ -42,7 +42,7 @@ func TestRequestID_UsesClientProvidedID(t *testing.T) {
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get request ID from context
-		requestID := r.Context().Value("requestID")
+		requestID := r.Context().Value(RequestIDKey)
 		if requestID == nil {
 			t.Error("Expected requestID in context, got nil")
 		}
@@ -129,7 +129,7 @@ func TestRequestID_ContextPropagation(t *testing.T) {
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract requestID from context
-		if val := r.Context().Value("requestID"); val != nil {
+		if val := r.Context().Value(RequestIDKey); val != nil {
 			contextRequestID = val.(string)
 		}
 		w.WriteHeader(http.StatusOK)
@@ -158,7 +158,7 @@ func TestRequestID_ContextPropagation(t *testing.T) {
 
 func TestRequestID_EmptyHeaderGeneratesID(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := r.Context().Value("requestID")
+		requestID := r.Context().Value(RequestIDKey)
 		if requestID == nil || requestID == "" {
 			t.Error("Expected generated requestID, got nil or empty")
 		}
@@ -186,7 +186,7 @@ func TestRequestID_HandlerCalledCorrectly(t *testing.T) {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	handler := RequestID(testHandler)

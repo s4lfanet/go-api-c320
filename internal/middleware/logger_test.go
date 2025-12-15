@@ -18,7 +18,7 @@ func TestLogger_SuccessfulRequest(t *testing.T) {
 	// Test handler that returns 200 OK
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	// Wrap handler with logger middleware
@@ -79,7 +79,7 @@ func TestLogger_ErrorResponse(t *testing.T) {
 	// Test handler that returns 500 error
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("error"))
+		_, _ = w.Write([]byte("error"))
 	})
 
 	middleware := Logger(logger)
@@ -208,7 +208,7 @@ func TestLogger_BytesInOut(t *testing.T) {
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("response body"))
+		_, _ = w.Write([]byte("response body"))
 	})
 
 	middleware := Logger(logger)

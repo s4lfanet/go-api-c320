@@ -8,7 +8,7 @@ func TestNew(t *testing.T) {
 	app := New()
 
 	if app == nil {
-		t.Error("Expected non-nil app instance")
+		t.Fatal("Expected non-nil app instance")
 	}
 
 	if app.router != nil {

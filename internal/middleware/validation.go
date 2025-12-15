@@ -10,6 +10,48 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// ContextKey is the type for context keys to avoid collisions
+type ContextKey string
+
+const (
+	// BoardIDKey is the context key for board ID
+	BoardIDKey ContextKey = "boardID"
+	// PonIDKey is the context key for PON ID
+	PonIDKey ContextKey = "ponID"
+	// OnuIDKey is the context key for ONU ID
+	OnuIDKey ContextKey = "onuID"
+)
+
+// GetBoardID retrieves the validated board ID from request context
+func GetBoardID(ctx context.Context) (int, bool) {
+	val := ctx.Value(BoardIDKey)
+	if val == nil {
+		return 0, false
+	}
+	boardID, ok := val.(int)
+	return boardID, ok
+}
+
+// GetPonID retrieves the validated PON ID from request context
+func GetPonID(ctx context.Context) (int, bool) {
+	val := ctx.Value(PonIDKey)
+	if val == nil {
+		return 0, false
+	}
+	ponID, ok := val.(int)
+	return ponID, ok
+}
+
+// GetOnuID retrieves the validated ONU ID from request context
+func GetOnuID(ctx context.Context) (int, bool) {
+	val := ctx.Value(OnuIDKey)
+	if val == nil {
+		return 0, false
+	}
+	onuID, ok := val.(int)
+	return onuID, ok
+}
+
 // ValidateBoardPonParams validates board_id and pon_id URL parameters,
 // ensuring they are valid integers within the expected range.
 func ValidateBoardPonParams(next http.Handler) http.Handler {
@@ -43,8 +85,8 @@ func ValidateBoardPonParams(next http.Handler) http.Handler {
 
 		// Store validated values into request context for easier access in handlers
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "boardID", boardIDInt)
-		ctx = context.WithValue(ctx, "ponID", ponIDInt)
+		ctx = context.WithValue(ctx, BoardIDKey, boardIDInt)
+		ctx = context.WithValue(ctx, PonIDKey, ponIDInt)
 
 		next.ServeHTTP(w, r.WithContext(ctx)) // Proceed with the updated context
 	})
@@ -69,7 +111,7 @@ func ValidateOnuIDParam(next http.Handler) http.Handler {
 		}
 
 		// Store validated value into context
-		ctx := context.WithValue(r.Context(), "onuID", onuIDInt)
+		ctx := context.WithValue(r.Context(), OnuIDKey, onuIDInt)
 		next.ServeHTTP(w, r.WithContext(ctx)) // Proceed with the updated context
 	})
 }
