@@ -13,39 +13,40 @@ import (
 // using the provided zerolog.Logger instance. It captures information such as request
 // time, remote address, request path, protocol, method, user agent, response status,
 // bytes in/out, and elapsed time. It also handles panics and logs them as errors
-func Logger(logger zerolog.Logger) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			startTime := time.Now()
+func Logger(logger zerolog.Logger) func(next http.Handler) http.Handler { // Function to return Logger middleware handler
+	return func(next http.Handler) http.Handler { // Return the actual middleware function
+		fn := func(w http.ResponseWriter, r *http.Request) { // Define the handler function
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor) // Wrap the response writer to capture status and size
+			startTime := time.Now()                                 // Record start time of request
 
-			defer func() {
-				endTime := time.Now()                 // End time
-				elapsedTime := endTime.Sub(startTime) // Request time
+			defer func() { // Defer logging execution until after the request is processed
+				endTime := time.Now()                 // Record end time
+				elapsedTime := endTime.Sub(startTime) // Calculate duration
 
-				if r := recover(); r != nil && r != http.ErrAbortHandler {
-					logger.Error().Interface("recover", r).Bytes("stack", debug.Stack()).Msg("incoming_request_panic")
-					ww.WriteHeader(http.StatusInternalServerError)
+				if r := recover(); r != nil && r != http.ErrAbortHandler { // Recover from panics
+					logger.Error().Interface("recover", r).Bytes("stack", debug.Stack()).Msg("incoming_request_panic") // Log panic details
+					ww.WriteHeader(http.StatusInternalServerError)                                                     // Respond with 500 Internal Server Error
 				}
 
+				// Log request details using structured logging
 				logger.Info().Fields(map[string]interface{}{
-					"time":         startTime.Format(time.RFC3339), // Format using RFC3339
-					"remote_addr":  r.RemoteAddr,
-					"path":         r.URL.Path,
-					"proto":        r.Proto,
-					"method":       r.Method,
-					"user_agent":   r.UserAgent(),
-					"status":       http.StatusText(ww.Status()),
-					"status_code":  ww.Status(),
-					"bytes_in":     r.ContentLength,
-					"bytes_out":    ww.BytesWritten(),
-					"elapsed_time": elapsedTime.String(),
-				}).Msg("incoming_request")
+					"time":         startTime.Format(time.RFC3339), // Format start time as RFC3339
+					"remote_addr":  r.RemoteAddr,                   // Remote IP address
+					"path":         r.URL.Path,                     // Request path
+					"proto":        r.Proto,                        // Protocol version
+					"method":       r.Method,                       // HTTP method
+					"user_agent":   r.UserAgent(),                  // User Agent string
+					"status":       http.StatusText(ww.Status()),   // Text description of HTTP status
+					"status_code":  ww.Status(),                    // Numeric HTTP status code
+					"bytes_in":     r.ContentLength,                // Request content length
+					"bytes_out":    ww.BytesWritten(),              // Response body size
+					"elapsed_time": elapsedTime.String(),           // Processing duration as a string
+				}).Msg("incoming_request") // Log message
 			}()
 
-			next.ServeHTTP(ww, r)
+			next.ServeHTTP(ww, r) // Serve the request using the wrapped response writer
 		}
 
-		return http.HandlerFunc(fn)
+		return http.HandlerFunc(fn) // Return the handler function
 	}
 }

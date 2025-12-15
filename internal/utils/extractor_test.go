@@ -19,7 +19,7 @@ func TestExtractONUID(t *testing.T) {
 		{"", ""},
 
 		// Test with invalid OID values
-		{"invalid.oid", ""}, // Add test case for an invalid OID
+		{"invalid.oid", ""}, // Add a test case for an invalid OID
 	}
 
 	for _, tc := range testCases {
@@ -131,7 +131,7 @@ func TestExtractAndGetStatus(t *testing.T) {
 
 		// Test with invalid integer input
 		{"invalid", "Unknown"},
-		{8, "Unknown"}, // Add test case for a value not covered in the switch
+		{8, "Unknown"}, // Add a test case for a value not covered in the switch
 	}
 
 	for _, tc := range testCases {

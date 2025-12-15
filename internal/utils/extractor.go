@@ -7,6 +7,7 @@ import (
 )
 
 // ExtractONUID function is used to extract ONU ID from OID string
+// It assumes the ONU ID is the last numeric component of the dot-separated OID string.
 func ExtractONUID(oid string) string {
 	// Split the OID name and take the last component
 	parts := strings.Split(oid, ".")
@@ -14,50 +15,53 @@ func ExtractONUID(oid string) string {
 		// Check if the last component is a valid number
 		lastComponent := parts[len(parts)-1]
 		if _, err := strconv.Atoi(lastComponent); err == nil {
-			return lastComponent
+			return lastComponent // Return if valid integer string
 		}
 	}
 	return "" // Return an empty string if the OID is invalid or empty (default value)
 }
 
 // ExtractIDOnuID function is used to extract ONU ID from OID interface{}
+// Validates the type is string and performs extraction.
 func ExtractIDOnuID(oid interface{}) int {
 	if oid == nil {
-		return 0
+		return 0 // Return 0 if input is nil
 	}
 
 	switch v := oid.(type) {
 	case string:
-		parts := strings.Split(v, ".")
+		parts := strings.Split(v, ".") // Split string by dot
 		if len(parts) > 0 {
 			lastPart := parts[len(parts)-1]
-			id, err := strconv.Atoi(lastPart)
+			id, err := strconv.Atoi(lastPart) // Convert the last part to int
 			if err == nil {
-				return id
+				return id // Return ID
 			}
 		}
 		return 0
 	default:
-		return 0
+		return 0 // Return 0 for other types
 	}
 }
 
 // ExtractName function is used to extract name from OID value
+// Handling both string and byte slice types.
 func ExtractName(oidValue interface{}) string {
 	switch v := oidValue.(type) {
 	case string:
 		// Data is string, return it
 		return v
 	case []byte:
-		// Data is byte slice, convert to string
+		// Data is a byte slice, convert to string
 		return string(v)
 	default:
-		// Data type is not recognized, you can handle this case according to your needs.
-		return "Unknown" // Return "Unknown" if the OID is invalid or empty
+		// Data type is not recognized
+		return "Unknown" // Return "Unknown" default
 	}
 }
 
 // ExtractSerialNumber function is used to extract serial number from OID value
+// Removes "1," prefix if present (common in some ZTE OLTs).
 func ExtractSerialNumber(oidValue interface{}) string {
 	switch v := oidValue.(type) {
 	case string:
@@ -70,27 +74,28 @@ func ExtractSerialNumber(oidValue interface{}) string {
 		// Convert byte slice to string
 		strValue := string(v)
 		if strings.HasPrefix(strValue, "1,") {
-			return strValue[2:]
+			return strValue[2:] // Remove prefix
 		}
-		return strValue // Data is byte slice, convert to string
+		return strValue
 	default:
-		// Data type is not recognized, you can handle this case according to your needs.
-		return "" // Return 0 if the OID is invalid or empty (default value)
+		// Data type is not recognized
+		return "" // Return empty string
 	}
 }
 
 // ConvertAndMultiply function is used to convert the PDU value to string after multiplying by 0.002 and subtracting 30
+// Typically used for converting Optical Power values.
 func ConvertAndMultiply(pduValue interface{}) (string, error) {
-	// Type assert pduValue to an integer type
+	// Type asserts pduValue to an integer type
 	intValue, ok := pduValue.(int)
 	if !ok {
-		return "", fmt.Errorf("value is not an integer")
+		return "", fmt.Errorf("value is not an integer") // Error if not int
 	}
 
-	// Multiply the integer by 0.002
+	// Multiply the integer by 0.002 (scale factor)
 	result := float64(intValue) * 0.002
 
-	// Subtract 30
+	// Subtract 30 (offset)
 	result -= 30.0
 
 	// Convert the result to a string with two decimal places
@@ -100,8 +105,9 @@ func ConvertAndMultiply(pduValue interface{}) (string, error) {
 }
 
 // ExtractAndGetStatus function is used to extract and get status from OID value
+// Maps integer status codes to human-readable strings.
 func ExtractAndGetStatus(oidValue interface{}) string {
-	// Check if oidValue is not an integer
+	// Check if oidValue is an integer
 	intValue, ok := oidValue.(int)
 	if !ok {
 		return "Unknown"
@@ -111,13 +117,13 @@ func ExtractAndGetStatus(oidValue interface{}) string {
 	case 1:
 		return "Logging"
 	case 2:
-		return "LOS"
+		return "LOS" // Loss of Signal
 	case 3:
 		return "Synchronization"
 	case 4:
 		return "Online"
 	case 5:
-		return "Dying Gasp"
+		return "Dying Gasp" // Power failure indication
 	case 6:
 		return "Auth Failed"
 	case 7:
@@ -127,9 +133,10 @@ func ExtractAndGetStatus(oidValue interface{}) string {
 	}
 }
 
-// ExtractLastOfflineReason function is used to extract last offline reason from OID value
+// ExtractLastOfflineReason function is used to extract the last offline reason from OID value
+// Maps integer reason codes to human-readable strings.
 func ExtractLastOfflineReason(oidValue interface{}) string {
-	// Check if oidValue is not an integer
+	// Check if oidValue is an integer
 	intValue, ok := oidValue.(int)
 	if !ok {
 		return "Unknown"
@@ -139,11 +146,11 @@ func ExtractLastOfflineReason(oidValue interface{}) string {
 	case 1:
 		return "Unknown"
 	case 2:
-		return "LOS"
+		return "LOS" // Loss of Signal
 	case 3:
 		return "LOSi"
 	case 4:
-		return "LOFi"
+		return "LOFi" // Loss of Frame
 	case 5:
 		return "sfi"
 	case 6:
@@ -169,11 +176,11 @@ func ExtractLastOfflineReason(oidValue interface{}) string {
 
 // ExtractGponOpticalDistance function is used to extract GPON optical distance from OID value
 func ExtractGponOpticalDistance(oidValue interface{}) string {
-	// Check if oidValue is not an integer
+	// Check if oidValue is an integer
 	intValue, ok := oidValue.(int)
 	if !ok {
 		return "Unknown"
 	}
 
-	return strconv.Itoa(intValue)
+	return strconv.Itoa(intValue) // Convert integer to string
 }

@@ -3,7 +3,7 @@ package utils
 import "testing"
 
 func TestGetConfigPath(t *testing.T) {
-	// Kasus uji untuk configPath "development"
+	// case for configPath "development"
 	configPath := "development"
 	expectedPath := "./config/config-dev"
 	result := GetConfigPath(configPath)
@@ -11,7 +11,7 @@ func TestGetConfigPath(t *testing.T) {
 		t.Errorf("For configPath %s, got %s, expected %s", configPath, result, expectedPath)
 	}
 
-	// Kasus uji untuk configPath "heroku"
+	// case for configPath "heroku"
 	configPath = "heroku"
 	expectedPath = "./config/config-heroku"
 	result = GetConfigPath(configPath)
@@ -19,7 +19,7 @@ func TestGetConfigPath(t *testing.T) {
 		t.Errorf("For configPath %s, got %s, expected %s", configPath, result, expectedPath)
 	}
 
-	// Kasus uji untuk configPath "production"
+	// case for configPath "production"
 	configPath = "production"
 	expectedPath = "./config/config-prod"
 	result = GetConfigPath(configPath)
@@ -27,7 +27,7 @@ func TestGetConfigPath(t *testing.T) {
 		t.Errorf("For configPath %s, got %s, expected %s", configPath, result, expectedPath)
 	}
 
-	// Kasus uji default
+	// Case for unknown configPath
 	configPath = "unknown"
 	expectedPath = "./config/cfg"
 	result = GetConfigPath(configPath)

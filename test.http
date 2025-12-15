@@ -1,20 +1,162 @@
-### List All ONU by Board and OLT PON
-GET localhost:8081/api/v1/board/2/pon/7
+###############################################
+# Go SNMP OLT ZTE C320 - API Test Collection
+# Base URL: http://localhost:8081
+###############################################
 
-### Get ONU by Board and OLT PON and ONU ID
-GET localhost:8081/api/v1/board/1/pon/8/onu/11
+### Health Check - Root Endpoint
+GET http://localhost:8081/
+Accept: application/json
 
-### Get Empty ONU ID by Board and OLT PON
-GET localhost:8081/api/v1/board/1/pon/8/onu_id/empty
+###############################################
+# ONU Information Endpoints
+###############################################
 
-### Update Empty ONU ID by Board and OLT PON on Redis
-GET localhost:8081/api/v1/board/1/pon/8/onu_id/update
+### Get All ONUs by Board and PON
+# Retrieves all ONUs for a specific board and PON combination
+# Parameters:
+#   - board_id: Board number (1 or 2)
+#   - pon_id: PON number (1-16)
+GET http://localhost:8081/api/v1/board/2/pon/7
+Accept: application/json
 
-### Get ONU ID by Board and OLT PON with Pagination
-GET localhost:8081/api/v1/paginate/board/1/pon/8?page=2
+### Get All ONUs - Board 1 PON 8
+GET http://localhost:8081/api/v1/board/1/pon/8
+Accept: application/json
 
-### Get ONU ID by Board and OLT PON with Limit
-GET localhost:8081/api/v1/paginate/board/1/pon/8?limit=5
+### Get Specific ONU by Board, PON, and ONU ID
+# Retrieves detailed information for a specific ONU
+# Parameters:
+#   - board_id: Board number (1 or 2)
+#   - pon_id: PON number (1-16)
+#   - onu_id: ONU ID number
+GET http://localhost:8081/api/v1/board/1/pon/8/onu/11
+Accept: application/json
 
-### Get ONU ID by Board and OLT PON with Pagination and Limit
-GET localhost:8081/api/v1/paginate/board/1/pon/8?page=2&limit=5
+### Get Specific ONU - Board 2 PON 7 ONU 4
+GET http://localhost:8081/api/v1/board/2/pon/7/onu/4
+Accept: application/json
+
+###############################################
+# Empty ONU ID Endpoints
+###############################################
+
+### Get Empty ONU IDs
+# Returns all available/empty ONU IDs for a board/PON
+GET http://localhost:8081/api/v1/board/1/pon/8/onu_id/empty
+Accept: application/json
+
+### Get Empty ONU IDs - Board 2 PON 5
+GET http://localhost:8081/api/v1/board/2/pon/5/onu_id/empty
+Accept: application/json
+
+### Update Empty ONU ID Cache
+# Forces cache refresh for empty ONU IDs
+GET http://localhost:8081/api/v1/board/1/pon/8/onu_id/update
+Accept: application/json
+
+### Update Empty ONU IDs - Board 2 PON 5
+GET http://localhost:8081/api/v1/board/2/pon/5/onu_id/update
+Accept: application/json
+
+###############################################
+# ONU ID and Serial Number Endpoint
+###############################################
+
+### Get ONU IDs with Serial Numbers
+# Returns list of ONU IDs and their serial numbers
+GET http://localhost:8081/api/v1/board/1/pon/8/onu_id_sn
+Accept: application/json
+
+### Get ONU IDs with Serial Numbers - Board 2 PON 7
+GET http://localhost:8081/api/v1/board/2/pon/7/onu_id_sn
+Accept: application/json
+
+###############################################
+# Pagination Endpoints
+###############################################
+
+### Get ONUs with Pagination - Default (page 1, limit 10)
+GET http://localhost:8081/api/v1/paginate/board/1/pon/8
+Accept: application/json
+
+### Get ONUs with Pagination - Specific Page
+# Parameters:
+#   - page: Page number (default: 1)
+#   - limit: Items per page (default: 10, max: 100)
+GET http://localhost:8081/api/v1/paginate/board/1/pon/8?page=2
+Accept: application/json
+
+### Get ONUs with Pagination - Custom Limit
+GET http://localhost:8081/api/v1/paginate/board/1/pon/8?limit=5
+Accept: application/json
+
+### Get ONUs with Pagination - Page 2 with Limit 5
+GET http://localhost:8081/api/v1/paginate/board/1/pon/8?page=2&limit=5
+Accept: application/json
+
+### Get ONUs with Pagination - Board 2 PON 8
+GET http://localhost:8081/api/v1/paginate/board/2/pon/8?limit=3&page=2
+Accept: application/json
+
+###############################################
+# Cache Management Endpoints
+###############################################
+
+### Delete Cache for Board/PON
+# Clears Redis cache for specific board/PON combination
+DELETE http://localhost:8081/api/v1/board/1/pon/8
+Accept: application/json
+
+### Delete Cache - Board 2 PON 7
+DELETE http://localhost:8081/api/v1/board/2/pon/7
+Accept: application/json
+
+###############################################
+# Error Testing - Invalid Parameters
+###############################################
+
+### Invalid Board ID (should return 400)
+GET http://localhost:8081/api/v1/board/99/pon/1
+Accept: application/json
+
+### Invalid PON ID (should return 400)
+GET http://localhost:8081/api/v1/board/1/pon/99
+Accept: application/json
+
+### Invalid ONU ID (should return 400)
+GET http://localhost:8081/api/v1/board/1/pon/1/onu/abc
+Accept: application/json
+
+###############################################
+# Performance Testing - Multiple Requests
+###############################################
+
+### Test with Board 1 - All PONs
+GET http://localhost:8081/api/v1/board/1/pon/1
+###
+GET http://localhost:8081/api/v1/board/1/pon/2
+###
+GET http://localhost:8081/api/v1/board/1/pon/3
+###
+GET http://localhost:8081/api/v1/board/1/pon/4
+###
+
+### Test with Board 2 - All PONs
+GET http://localhost:8081/api/v1/board/2/pon/1
+###
+GET http://localhost:8081/api/v1/board/2/pon/2
+###
+GET http://localhost:8081/api/v1/board/2/pon/3
+###
+GET http://localhost:8081/api/v1/board/2/pon/4
+###
+
+###############################################
+# Notes:
+# - All requests include proper Accept headers
+# - Default timeout: 90 seconds
+# - Rate limit: 100 req/s, burst 200
+# - Cache TTL: 10 minutes
+# - Board IDs: 1 or 2
+# - PON IDs: 1-16
+###############################################

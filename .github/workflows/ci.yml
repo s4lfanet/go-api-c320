@@ -98,7 +98,7 @@ jobs:
             type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=1.0.0
+            type=raw,value=2.0.0
       
       - name: Build & Push Docker Image
         id: build

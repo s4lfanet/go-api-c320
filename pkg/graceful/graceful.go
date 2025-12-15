@@ -13,41 +13,62 @@ import (
 )
 
 // Shutdown gracefully shuts down the HTTP server when the context is done or an OS signal is received.
+// Supports both HTTP and HTTPS based on environment configuration.
+// Set USE_TLS=true and provide TLS_CERT_FILE and TLS_KEY_FILE for HTTPS.
 func Shutdown(ctx context.Context, server *http.Server) error {
-	ch := make(chan error, 1)
+	ch := make(chan error, 1) // Create a buffered channel to capture server errors
 
-	go func() {
-		err := server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			ch <- fmt.Errorf("failed to start server: %v", err)
+	// Check if TLS/HTTPS should be used (from environment variable)
+	useTLS := os.Getenv("USE_TLS") == "true"
+	certFile := os.Getenv("TLS_CERT_FILE")
+	keyFile := os.Getenv("TLS_KEY_FILE")
+
+	go func() { // Start a server in a goroutine
+		var err error
+
+		if useTLS {
+			// Validate TLS configuration
+			if certFile == "" || keyFile == "" {
+				ch <- fmt.Errorf("TLS enabled but TLS_CERT_FILE or TLS_KEY_FILE not provided")
+				close(ch)
+				return
+			}
+			log.Printf("Starting HTTPS server on %s with TLS", server.Addr)
+			err = server.ListenAndServeTLS(certFile, keyFile) // Start HTTPS server
+		} else {
+			log.Printf("Starting HTTP server on %s", server.Addr)
+			err = server.ListenAndServe() // Start HTTP server
 		}
-		close(ch)
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) { // Check for unexpected errors
+			ch <- fmt.Errorf("failed to start server: %v", err) // Send error to channel
+		}
+		close(ch) // Close channel when the server stops
 	}()
 
 	// Create a channel to capture OS signals (e.g., SIGINT or SIGTERM).
 	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM) // Register a channel to receive interrupt and term signals
 
-	select {
-	case err := <-ch:
-		return err
-	case <-ctx.Done():
-		timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		defer cancel()
-		if err := server.Shutdown(timeoutCtx); err != nil {
-			log.Printf("Failed to gracefully shut down the server: %v", err)
+	select { // Wait for one of the cases to happen
+	case err := <-ch: // If server error occurred
+		return err // Return the error
+	case <-ctx.Done(): // If context is canceled (e.g., external shutdown request)
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10) // Create a shutdown context with 10s timeout
+		defer cancel()                                                                  // Ensure cancellation
+		if err := server.Shutdown(timeoutCtx); err != nil {                             // Attempt a graceful shutdown
+			log.Printf("Failed to gracefully shut down the server: %v", err) // Log failure
 		}
-	case sig := <-signalCh:
-		log.Printf("Received signal: %v. Shutting down gracefully...", sig)
+	case sig := <-signalCh: // If OS signal received
+		log.Printf("Received signal: %v. Shutting down gracefully...", sig) // Log signal reception
 
-		// Inisialisasi konteks dengan timeout
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		defer cancel()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*10) // Create a shutdown context with 10s timeout
+		defer cancel()                                                                   // Ensure cancellation
 
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Failed to gracefully shut down the server: %v", err)
+		if err := server.Shutdown(shutdownCtx); err != nil { // Attempt a graceful shutdown
+			log.Printf("Failed to gracefully shut down the server: %v", err) // Log failure
 		}
 	}
 
-	return nil
+	return nil // Return nil indicating a successful (or handled) shutdown
 }

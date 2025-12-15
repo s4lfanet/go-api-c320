@@ -9,31 +9,31 @@ import (
 )
 
 func TestSendRequestJSONResponse(t *testing.T) {
-	// Inisialisasi ResponseWriter dan Request
+	// Initialising ResponseWriter dan Request
 	rr := httptest.NewRecorder()
 
-	// Contoh respons yang ingin Anda kirim
+	// Response for 200 OK
 	response := WebResponse{
 		Code:   200,
 		Status: "OK",
 		Data:   map[string]string{"key": "value"},
 	}
 
-	// Panggil fungsi SendJSONResponse
+	// Call function SendJSONResponse
 	SendJSONResponse(rr, http.StatusOK, response)
 
-	// Periksa kode status respons
+	// Check status code
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Status code tidak sesuai: got %v want %v", status, http.StatusOK)
 	}
 
-	// Periksa tipe konten
+	// Check content type
 	expectedContentType := "application/json"
 	if contentType := rr.Header().Get("Content-Type"); contentType != expectedContentType {
 		t.Errorf("Content-Type tidak sesuai: got %v want %v", contentType, expectedContentType)
 	}
 
-	// Periksa respons JSON
+	// Check respons JSON
 	var decodedResponse WebResponse
 	err := json.NewDecoder(rr.Body).Decode(&decodedResponse)
 	if err != nil {
@@ -43,27 +43,27 @@ func TestSendRequestJSONResponse(t *testing.T) {
 }
 
 func TestErrorBadRequestBos(t *testing.T) {
-	// Inisialisasi ResponseWriter
+	// Initialising ResponseWriter
 	rr := httptest.NewRecorder()
 
-	// Contoh error
+	// Cont error
 	err := errors.New("Bad Request")
 
-	// Panggil fungsi ErrorBadRequest
+	// Call function ErrorBadRequest
 	ErrorBadRequest(rr, err)
 
-	// Periksa kode status respons
+	// Check status respons
 	if status := rr.Code; status != http.StatusBadRequest {
 		t.Errorf("Status code tidak sesuai: got %v want %v", status, http.StatusBadRequest)
 	}
 
-	// Periksa tipe konten
+	// Check the content type
 	expectedContentType := "application/json"
 	if contentType := rr.Header().Get("Content-Type"); contentType != expectedContentType {
 		t.Errorf("Content-Type tidak sesuai: got %v want %v", contentType, expectedContentType)
 	}
 
-	// Periksa respons JSON
+	// Check respons JSON
 	var decodedResponse ErrorResponse
 	err = json.NewDecoder(rr.Body).Decode(&decodedResponse)
 	if err != nil {

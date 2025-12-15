@@ -9,9 +9,20 @@ tasks:
       - task: dev
 
   dev:
-    desc: Start the local environment
+    desc: Start local development (Redis in Docker + App with hot reload on host)
     cmds:
-      - docker compose -f docker-compose.local.yaml up -d && air -c .air.toml
+      - docker compose -f docker-compose.local.yaml up -d
+      - air -c .air.toml
+
+  dev-docker:
+    desc: Start full development environment in Docker (with hot reload)
+    cmds:
+      - docker compose up --build
+
+  dev-down:
+    desc: Stop local development environment
+    cmds:
+      - docker compose -f docker-compose.local.yaml down
 
   go-install:
     cmds:
@@ -25,13 +36,77 @@ tasks:
       - task: tidy
 
   init:
-    desc: Initialize the environment
-    deps: [ dl-deps ]
+    desc: Initialize the development environment
+    deps: [dl-deps]
+    cmds:
+      - echo "Development environment initialized"
+      - echo "Next steps:"
+      - echo "   1. Copy .env.example to .env and configure"
+      - echo "   2. Run 'task dev' to start development"
 
   tidy:
     desc: Clean up dependencies
     cmds:
       - go mod tidy
+
+  # Testing tasks
+  test:
+    desc: Run all unit tests
+    cmds:
+      - go test ./... -cover
+
+  test-verbose:
+    desc: Run all unit tests with verbose output
+    cmds:
+      - go test ./... -v -cover
+
+  test-coverage:
+    desc: Run tests and generate coverage report (text)
+    cmds:
+      - go test ./... -coverprofile=coverage.out -covermode=atomic
+      - go tool cover -func=coverage.out
+      - echo ""
+      - echo "Coverage summary:"
+      - go tool cover -func=coverage.out | grep total
+
+  test-html:
+    desc: Generate HTML coverage report and open in browser
+    cmds:
+      - go test ./... -coverprofile=coverage.out -covermode=atomic
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Coverage report generated: coverage.html"
+      - echo "Open coverage.html in your browser to view detailed coverage"
+
+  test-unit:
+    desc: Run unit tests for specific package usage
+    cmds:
+      - go test {{.PKG}} -v -cover
+
+  test-race:
+    desc: Run tests with race detection
+    cmds:
+      - go test ./... -race -v
+
+  test-short:
+    desc: Run short tests (excluding integration tests)
+    cmds:
+      - go test ./... -short -v
+
+  load-test:
+    desc: Run k6 load testing
+    preconditions:
+      - sh: command -v k6
+        msg: "k6 is not installed. Install it from https://k6.io/docs/getting-started/installation/"
+      - sh: test -f k6-load-test.js
+        msg: "k6-load-test.js not found"
+    cmds:
+      - echo "Starting k6 load test..."
+      - k6 run k6-load-test.js
+
+  benchmark:
+    desc: Run benchmarks
+    cmds:
+      - go test ./config/... -bench=. -benchmem
 
   app-build:
     desc: Build the app binary
@@ -43,60 +118,121 @@ tasks:
       - ./{{.EXE}}
 
   build-image:
-    desc: Build the docker image
+    desc: Build the docker image (local)
     cmds:
-      - docker build -t {{.EXE}} .
+      - docker build -t {{.EXE}}:local .
+
+  build-image-prod:
+    desc: Build production docker image (multi-arch)
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t {{.EXE}}:latest -f Dockerfile .
 
   push-image:
-    desc: Push docker image with tag latest with multi-arch support (linux/amd64, linux/arm64) to docker hub
+    desc: Build and push docker image with multi-arch support to Docker Hub
     cmds:
-      - docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t {{.EXE}}:latest -f Dockerfile .
+      - 'docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t {{.EXE}}:latest -f Dockerfile .'
+      - 'echo "Image pushed to Docker Hub: {{.EXE}}:latest"'
 
   pull-image:
-    desc: Pull docker image with tag latest with multi-arch support (linux/amd64, linux/arm64) from docker hub
+    desc: Pull docker image from Docker Hub
     cmds:
       - docker pull {{.EXE}}:latest
 
-  docker-run:
-    desc: Run docker image with tag latest
+  # Production deployment tasks
+  prod-up:
+    desc: Start production containers (requires .env.prod)
+    preconditions:
+      - sh: test -f .env.prod
+        msg: ".env.prod not found. Copy .env.example to .env.prod and configure it."
     cmds:
-      - docker network create local-dev
-      - docker run -d --name redis-container --network local-dev -p 6379:6379 redis:7.2
-      - docker run -d -p 8081:8081 --name go-snmp-olt-zte-c320 --network local-dev -e REDIS_HOST=redis-container -e REDIS_PORT=6379 -e REDIS_DB=0 -e REDIS_MIN_IDLE_CONNECTIONS=200 -e REDIS_POOL_SIZE=12000 -e REDIS_POOL_TIMEOUT=240 -e SNMP_HOST=192.168.213.174 -e SNMP_PORT=161 -e SNMP_COMMUNITY=homenetro {{.EXE}}:latest
+      - docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d
+      - echo "Production containers started"
+      - docker compose -f docker-compose.prod.yaml ps
 
-  docker-stop:
-    desc: Stop docker image with tag latest
+  prod-down:
+    desc: Stop production containers
     cmds:
-      - docker stop go-snmp-olt-zte-c320 && docker stop redis-container
+      - docker compose -f docker-compose.prod.yaml down
+      - echo "Production containers stopped"
 
-  docker-remove:
-    desc: Remove docker image with tag latest
+  prod-restart:
+    desc: Restart production containers
     cmds:
-      - docker network rm local-dev && docker rm go-snmp-olt-zte-c320 && docker rm redis-container
+      - task: prod-down
+      - task: prod-up
 
+  prod-rebuild:
+    desc: Rebuild and restart production containers
+    cmds:
+      - docker compose -f docker-compose.prod.yaml down
+      - docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
+      - echo "Production containers rebuilt and started"
+
+  prod-logs:
+    desc: View production container logs
+    cmds:
+      - docker compose -f docker-compose.prod.yaml logs -f app
+
+  prod-logs-redis:
+    desc: View production Redis logs
+    cmds:
+      - docker compose -f docker-compose.prod.yaml logs -f redis
+
+  prod-ps:
+    desc: Show production containers status
+    cmds:
+      - docker compose -f docker-compose.prod.yaml ps
+
+  # Development docker commands (docker-compose.yaml)
   up:
-    desc: Start the docker containers in the background
+    desc: Start development Docker environment
     cmds:
-      - docker compose up -d
-
-  up-rebuild:
-    desc: Rebuild the docker containers
-    cmds:
-      - docker compose up -d --build
+      - docker compose up --build
 
   down:
-    desc: Stop and remove the docker containers
+    desc: Stop development Docker environment
     cmds:
       - docker compose down
 
   restart:
-    desc: Restart the docker containers
+    desc: Restart development Docker environment
     cmds:
       - task: down
       - task: up
 
-  rebuild:
-    desc: Rebuild the docker image and up with detached mode
+  logs:
+    desc: View development container logs
     cmds:
-      - task: down
-      - task: up-rebuild
+      - docker compose logs -f app
+
+  logs-redis:
+    desc: View development Redis logs
+    cmds:
+      - docker compose logs -f redis
+
+  ps:
+    desc: Show development containers status
+    cmds:
+      - docker compose ps
+
+  clean:
+    desc: Clean up all containers, volumes, and build artifacts
+    cmds:
+      - docker compose down -v
+      - docker compose -f docker-compose.prod.yaml down -v
+      - docker compose -f docker-compose.local.yaml down -v
+      - rm -f {{.EXE}}
+      - rm -f coverage.out coverage.html
+      - rm -rf tmp/ # Air tmp directory
+      - echo "Cleanup complete"
+
+  clean-cache:
+    desc: Clean Go module cache and build cache
+    cmds:
+      - go clean -cache -modcache -testcache
+      - echo "Go caches cleaned"
+
+  help:
+    desc: Show available tasks
+    cmds:
+      - task --list

@@ -13,14 +13,60 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# IDE and Editor files
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary and log files
 TODO.md
 logs.txt
-.idea/
-secret.md
-.env
+*.log
 tmp/*
 tmp/
 .task/
 gen/*
+
+# Sensitive files - NEVER commit these
+secret.md
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+secrets.yaml
+secrets.yml
+config/local.yaml
+config/local.yml
+config/config-dev.yml
+config/config-prod.yaml
+# No cfg.yaml needed - OID mappings are generated dynamically in code
+
+# Build outputs
+/bin/
+/dist/
+/build/
+bin/
+
+# User-specific directories
 /sumitroajiprabowo/
+/cepatkilatteknologi/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
