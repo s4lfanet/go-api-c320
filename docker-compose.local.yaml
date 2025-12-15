@@ -1,6 +1,36 @@
+# Local Development Docker Compose Configuration
+# Only runs Redis - app runs natively on host with Air for hot reload
+#
+# Setup:
+#   1. Ensure .env exists with REDIS_HOST=localhost
+#   2. Run: task dev (or docker compose -f docker-compose.local.yaml up -d && air)
+#
+# Use Case:
+#   - Fastest development iteration (no Docker overhead for app)
+#   - Direct debugging capabilities
+#   - Native Go tooling support
+
 services:
   redis:
-    container_name: redis
-    image: redis:7.2
+    image: redis:7.2-alpine
+    container_name: redis-local
+    restart: unless-stopped
+
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
+
+    volumes:
+      - redis-local-data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-local-data:
+    driver: local
