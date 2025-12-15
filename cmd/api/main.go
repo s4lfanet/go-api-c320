@@ -9,11 +9,11 @@ import (
 
 func main() {
 	// Initialize application
-	server := app.New()                                     // Create a new instance of application
-	ctx, cancel := context.WithCancel(context.Background()) // Create a new context with cancel function
+	server := app.New()                                     // Create a new instance of the application
+	ctx, cancel := context.WithCancel(context.Background()) // Create a new context with a cancel function
 	defer cancel()                                          // Cancel context when the main function is finished
 
-	// Start application server in a goroutine
+	// Start an application server in a goroutine
 	go func() {
 		err := server.Start(ctx) // Start the application server
 		if err != nil {
@@ -25,7 +25,7 @@ func main() {
 	// Create a channel to wait for a signal to stop the application
 	stopSignal := make(chan struct{})
 
-	// You can replace the select statement with a simple channel receive
+	// You can replace the select statement with a simple channel receiver
 	<-stopSignal
 
 	// Log that the application is stopping
