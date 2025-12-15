@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/config"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
 	"github.com/gosnmp/gosnmp"
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/config"
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/model"
 )
 
 // mockSnmpRepository is a mock implementation of SnmpRepositoryInterface

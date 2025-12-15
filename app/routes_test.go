@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/handler"
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/model"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/handler"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
 )
 
 // mockOnuUsecase for testing routes

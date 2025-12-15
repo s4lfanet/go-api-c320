@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/config"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/config"
 )
 
 func TestNewRedisClient_FromConfig(t *testing.T) {

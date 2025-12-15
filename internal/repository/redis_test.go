@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
 	"github.com/go-redis/redismock/v9"
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/model"
 )
 
 func TestNewOnuRedisRepo(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
 	"github.com/go-chi/chi/v5"
-	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/model"
 )
 
 // mockOnuUsecase is a mock implementation of OnuUseCaseInterface
