@@ -1,377 +1,375 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
+	apperrors "github.com/megadata-dev/go-snmp-olt-zte-c320/internal/errors"
 	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/usecase"
 	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/utils"
 	"github.com/megadata-dev/go-snmp-olt-zte-c320/pkg/pagination"
 	"github.com/rs/zerolog/log"
 )
 
-// OnuHandlerInterface is an interface that represent the auth's handler contract
+// OnuHandlerInterface is an interface that represents the auth's handler contract
 type OnuHandlerInterface interface {
-	GetByBoardIDAndPonID(w http.ResponseWriter, r *http.Request)
-	GetByBoardIDPonIDAndOnuID(w http.ResponseWriter, r *http.Request)
-	GetEmptyOnuID(w http.ResponseWriter, r *http.Request)
-	GetOnuIDAndSerialNumber(w http.ResponseWriter, r *http.Request)
-	UpdateEmptyOnuID(w http.ResponseWriter, r *http.Request)
-	GetByBoardIDAndPonIDWithPaginate(w http.ResponseWriter, r *http.Request)
+	GetByBoardIDAndPonID(w http.ResponseWriter, r *http.Request)             // Handler to get ONU info by board and PON
+	GetByBoardIDPonIDAndOnuID(w http.ResponseWriter, r *http.Request)        // Handler to get specific ONU info
+	GetEmptyOnuID(w http.ResponseWriter, r *http.Request)                    // Handler to get empty ONU IDs
+	GetOnuIDAndSerialNumber(w http.ResponseWriter, r *http.Request)          // Handler to get ONU IDs and serial numbers
+	UpdateEmptyOnuID(w http.ResponseWriter, r *http.Request)                 // Handler to update empty ONU IDs
+	GetByBoardIDAndPonIDWithPaginate(w http.ResponseWriter, r *http.Request) // Handler to get paginated ONU info
+	DeleteCache(w http.ResponseWriter, r *http.Request)                      // Handler to delete cache for board/pon
 }
 
-// OnuHandler is a struct that represent the auth handler
+// OnuHandler is a struct that represents the auth handler
 type OnuHandler struct {
-	ponUsecase usecase.OnuUseCaseInterface
+	ponUsecase usecase.OnuUseCaseInterface // Usecase interface dependency
 }
 
-// NewOnuHandler will create an object that represent the auth handler
+// NewOnuHandler will create an object that represents the auth handler
 func NewOnuHandler(ponUsecase usecase.OnuUseCaseInterface) *OnuHandler {
-	return &OnuHandler{ponUsecase: ponUsecase}
+	return &OnuHandler{ponUsecase: ponUsecase} // Return new OnuHandler with injected usecase
 }
 
-// GetByBoardIDAndPonID is a method to get onu info by board id and pon id
-// example: http://localhost:8080/board/1/pon/1
+// GetByBoardIDAndPonID is a method to get one info by board id and pon id
+// example: http://localhost:8080/api/v1/board/1/pon/1
 func (o *OnuHandler) GetByBoardIDAndPonID(w http.ResponseWriter, r *http.Request) {
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int) // Retrieve boardID from context
+	ponIDInt := r.Context().Value("ponID").(int)     // Retrieve ponID from context
 
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Getting ONU info by board and PON") // Log the request
 
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
+	query := r.URL.Query() // Get query parameters
 
-	log.Info().Msg("Received a request to GetByBoardIDAndPonID")
-
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 1 or 2")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
-
-	query := r.URL.Query() // Get query parameters from the request
-
-	log.Debug().Interface("query_parameters", query).Msg("Received query parameters")
-
-	//Validate query parameters and return error 400 if query parameters is not "onu_id" or empty query parameters
+	// Validate query parameters and return error 400 if query parameters is not "onu_id" or empty query parameters
 	if len(query) > 0 && query["onu_id"] == nil {
-		log.Error().Msg("Invalid query parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid query parameter")) // error 400
+		log.Warn().Interface("query_parameters", query).Msg("Invalid query parameter") // Log warning
+		appErr := apperrors.NewValidationError(
+			"invalid query parameter - only 'onu_id' is allowed",
+			map[string]interface{}{"received": query},
+		) // Create validation error
+		utils.HandleError(w, appErr) // Handle and respond with error
 		return
 	}
 
 	// Call usecase to get data from SNMP
 	onuInfoList, err := o.ponUsecase.GetByBoardIDAndPonID(r.Context(), boardIDInt, ponIDInt)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get data from SNMP")
-		utils.ErrorInternalServerError(w, fmt.Errorf("cannot get data from snmp")) // error 500
+		log.Error().
+			Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("Failed to get ONU info from SNMP") // Log error
+		utils.HandleError(w, err) // Handle error
 		return
 	}
 
-	log.Info().Msg("Successfully retrieved data from SNMP")
-
-	/*
-		Validate onuInfoList value
-		If onuInfoList is empty, return error 404
-	*/
-
+	// Check if the result list is empty
 	if len(onuInfoList) == 0 {
-		log.Warn().Msg("Data not found")
-		utils.ErrorNotFound(w, fmt.Errorf("data not found")) // error 404
+		log.Warn().
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("ONU info not found") // Log warning
+		appErr := apperrors.NewNotFoundError("ONU info",
+			map[string]int{"board_id": boardIDInt, "pon_id": ponIDInt}) // Create not found error
+		utils.HandleError(w, appErr) // Handle error
 		return
 	}
 
-	// Convert result to JSON format according to WebResponse structure
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("result_count", len(onuInfoList)).
+		Msg("Successfully retrieved ONU info") // Log success
+
+	// Create web response object
 	response := utils.WebResponse{
-		Code:   http.StatusOK, // 200
-		Status: "OK",          // "OK"
-		Data:   onuInfoList,   // data
+		Code:   http.StatusOK, // Status 200
+		Status: "OK",
+		Data:   onuInfoList, // Payload
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, response) // 200
-
+	utils.SendJSONResponse(w, http.StatusOK, response) // Send JSON response
 }
 
-// GetByBoardIDPonIDAndOnuID is a method to get onu info by board id, pon id, and onu id
-// example: http://localhost:8080/board/1/pon/1/onu
+// GetByBoardIDPonIDAndOnuID is a method to get one info by board id, pon id, and onu id
+// example: http://localhost:8080/api/v1/board/1/pon/1/onu/1
 func (o *OnuHandler) GetByBoardIDPonIDAndOnuID(w http.ResponseWriter, r *http.Request) {
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int) // Get boardID
+	ponIDInt := r.Context().Value("ponID").(int)     // Get ponID
+	onuIDInt := r.Context().Value("onuID").(int)     // Get onuID
 
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
-	onuID := chi.URLParam(r, "onu_id")     // 1 - 128
-
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
-
-	log.Info().Msg("Received a request to GetByBoardIDPonIDAndOnuID")
-
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 1 or 2")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
-
-	onuIDInt, err := strconv.Atoi(onuID) // convert string to int
-
-	// Validate onuIDInt value and return error 400 if onuIDInt is not between 1 and 128
-	if err != nil || onuIDInt < 1 || onuIDInt > 128 {
-		log.Error().Err(err).Msg("Invalid 'onu_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'onu_id' parameter. It must be between 1 and 128")) // error 400
-		return
-	}
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("onu_id", onuIDInt).
+		Msg("Getting specific ONU info") // Log request
 
 	// Call usecase to get data from SNMP
 	onuInfoList, err := o.ponUsecase.GetByBoardIDPonIDAndOnuID(boardIDInt, ponIDInt, onuIDInt)
-
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get data from SNMP")
-		utils.ErrorInternalServerError(w, fmt.Errorf("cannot get data from snmp")) // error 500
+		log.Error().
+			Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Int("onu_id", onuIDInt).
+			Msg("Failed to get specific ONU info from SNMP") // Log error
+		utils.HandleError(w, err) // Handle error
 		return
 	}
 
-	log.Info().Msg("Successfully retrieved data from SNMP")
-
-	/*
-		Validate onuInfoList value
-		If onuInfoList.Board, onuInfoList.PON, and onuInfoList.ID is 0, return error 404
-		example: http://localhost:8080/board/1/pon/1/onu/129
-	*/
-
+	// Check if the returned object is empty (default zero values)
 	if onuInfoList.Board == 0 && onuInfoList.PON == 0 && onuInfoList.ID == 0 {
-		log.Error().Msg("Data not found")
-		utils.ErrorNotFound(w, fmt.Errorf("data not found")) // error 404
+		log.Warn().
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Int("onu_id", onuIDInt).
+			Msg("ONU not found") // Log warning
+		appErr := apperrors.NewNotFoundError("ONU",
+			map[string]int{"board_id": boardIDInt, "pon_id": ponIDInt, "onu_id": onuIDInt}) // Create not found error
+		utils.HandleError(w, appErr) // Handle error
 		return
 	}
 
-	// Convert a result to JSON format according to WebResponse structure
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("onu_id", onuIDInt).
+		Msg("Successfully retrieved specific ONU info") // Log success
+
+	// Create a web response
 	response := utils.WebResponse{
-		Code:   http.StatusOK, // 200
-		Status: "OK",          // "OK"
-		Data:   onuInfoList,   // data
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   onuInfoList,
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, response) // 200
+	utils.SendJSONResponse(w, http.StatusOK, response) // Send JSON response
 }
 
 // GetEmptyOnuID is a method to get empty onu id by board id and pon id
-// example: http://localhost:8080/board/1/pon/1/empty
+// example: http://localhost:8080/api/v1/board/1/pon/1/onu_id/empty
 func (o *OnuHandler) GetEmptyOnuID(w http.ResponseWriter, r *http.Request) {
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int)
+	ponIDInt := r.Context().Value("ponID").(int)
 
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
-
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
-
-	log.Info().Msg("Received a request to GetEmptyOnuID")
-
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 1 or 2")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Getting empty ONU IDs") // Log request
 
 	// Call usecase to get data from SNMP
 	onuIDEmptyList, err := o.ponUsecase.GetEmptyOnuID(r.Context(), boardIDInt, ponIDInt)
-
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get data from SNMP")
-		utils.ErrorInternalServerError(w, fmt.Errorf("cannot get data from snmp")) // error 500
+		log.Error().
+			Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("Failed to get empty ONU IDs from SNMP") // Log error
+		utils.HandleError(w, err)
 		return
 	}
 
-	log.Info().Msg("Successfully retrieved data from SNMP")
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("empty_count", len(onuIDEmptyList)).
+		Msg("Successfully retrieved empty ONU IDs") // Log success
 
-	// Convert result to JSON format according to WebResponse structure
+	// Create a web response
 	response := utils.WebResponse{
-		Code:   http.StatusOK,  // 200
-		Status: "OK",           // "OK"
-		Data:   onuIDEmptyList, // data
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   onuIDEmptyList,
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, response) // 200
+	utils.SendJSONResponse(w, http.StatusOK, response) // Send JSON response
 }
 
 // GetOnuIDAndSerialNumber is a method to get onu id and serial number by board id and pon id
-// example: http://localhost:8080/board/1/pon/1/serial
+// example: http://localhost:8080/api/v1/board/1/pon/1/onu_id_sn
 func (o *OnuHandler) GetOnuIDAndSerialNumber(w http.ResponseWriter, r *http.Request) {
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int)
+	ponIDInt := r.Context().Value("ponID").(int)
 
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
-
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
-
-	log.Info().Msg("Received a request to GetOnuSerialNumber")
-
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 1 or 2")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Getting ONU IDs and serial numbers") // Log request
 
 	// Call usecase to get Serial Number from SNMP
 	onuSerialNumber, err := o.ponUsecase.GetOnuIDAndSerialNumber(boardIDInt, ponIDInt)
-
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get data from SNMP")
-		utils.ErrorInternalServerError(w, fmt.Errorf("cannot get data from snmp")) // error 500
+		log.Error().
+			Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("Failed to get ONU serial numbers from SNMP") // Log error
+		utils.HandleError(w, err)
 		return
 	}
 
-	log.Info().Msg("Successfully retrieved data from SNMP")
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("result_count", len(onuSerialNumber)).
+		Msg("Successfully retrieved ONU serial numbers") // Log success
 
-	// Convert a result to JSON format according to WebResponse structure
+	// Create a web response
 	response := utils.WebResponse{
-		Code:   http.StatusOK,   // 200
-		Status: "OK",            // "OK"
-		Data:   onuSerialNumber, // data
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   onuSerialNumber,
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, response) // 200
+	utils.SendJSONResponse(w, http.StatusOK, response) // Send JSON response
 }
 
 // UpdateEmptyOnuID is a method to update empty onu id by board id and pon id
-// example: http://localhost:8080/board/1/pon/1/empty
+// example: http://localhost:8080/api/v1/board/1/pon/1/onu_id/update
 func (o *OnuHandler) UpdateEmptyOnuID(w http.ResponseWriter, r *http.Request) {
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int)
+	ponIDInt := r.Context().Value("ponID").(int)
 
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
-
-	log.Info().Msg("Received a request to UpdateEmptyOnuID")
-
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 0 or 1")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Updating empty ONU IDs") // Log request
 
 	// Call usecase to get data from SNMP
-	err = o.ponUsecase.UpdateEmptyOnuID(r.Context(), boardIDInt, ponIDInt)
-
+	err := o.ponUsecase.UpdateEmptyOnuID(r.Context(), boardIDInt, ponIDInt)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get data from SNMP")
-		utils.ErrorInternalServerError(w, fmt.Errorf("cannot get data from snmp")) // error 500
+		log.Error().
+			Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("Failed to update empty ONU IDs") // Log error
+		utils.HandleError(w, err)
 		return
 	}
 
-	log.Info().Msg("Successfully retrieved data from SNMP")
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Successfully updated empty ONU IDs") // Log success
 
-	// Convert result to JSON format according to WebResponse structure
+	// Create a web response
 	response := utils.WebResponse{
-		Code:   http.StatusOK,                 // 200
-		Status: "OK",                          // "OK"
-		Data:   "Success Update Empty ONU_ID", // data
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   "Success Update Empty ONU_ID",
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, response) // 200
+	utils.SendJSONResponse(w, http.StatusOK, response) // Send JSON response
 }
 
-// GetByBoardIDAndPonIDWithPaginate is a method to get onu info by board id and pon id with pagination
-// example: http://localhost:8080/board/1/pon/1/paginate?page=1&page_size=10
+// GetByBoardIDAndPonIDWithPaginate is a method to get one info by board id and pon id with pagination
+// example: http://localhost:8080/api/v1/paginate/board/1/pon/1?page=1&page_size=10
 func (o *OnuHandler) GetByBoardIDAndPonIDWithPaginate(w http.ResponseWriter, r *http.Request) {
-
-	boardID := chi.URLParam(r, "board_id") // 1 or 2
-	ponID := chi.URLParam(r, "pon_id")     // 1 - 8
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int)
+	ponIDInt := r.Context().Value("ponID").(int)
 
 	// Get page and page size parameters from the request
 	pageIndex, pageSize := pagination.GetPaginationParametersFromRequest(r)
 
-	boardIDInt, err := strconv.Atoi(boardID) // convert string to int
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("page", pageIndex).
+		Int("page_size", pageSize).
+		Msg("Getting paginated ONU info") // Log request
 
-	log.Info().Msg("Received a request to GetByBoardIDAndPonIDWithPaginate")
+	// Call usecase to get paginated data
+	item, count := o.ponUsecase.GetByBoardIDAndPonIDWithPagination(boardIDInt, ponIDInt, pageIndex, pageSize)
 
-	// Validate boardIDInt value and return error 400 if boardIDInt is not 1 or 2
-	if err != nil || (boardIDInt != 1 && boardIDInt != 2) {
-		log.Error().Err(err).Msg("Invalid 'board_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'board_id' parameter. It must be 1 or 2")) // error 400
-		return
-	}
-
-	ponIDInt, err := strconv.Atoi(ponID) // convert string to int
-
-	// Validate ponIDInt value and return error 400 if ponIDInt is not between 1 and 8
-	if err != nil || ponIDInt < 1 || ponIDInt > 16 {
-		log.Error().Err(err).Msg("Invalid 'pon_id' parameter")
-		utils.ErrorBadRequest(w, fmt.Errorf("invalid 'pon_id' parameter. It must be between 1 and 16")) // error 400
-		return
-	}
-
-	item, count := o.ponUsecase.GetByBoardIDAndPonIDWithPagination(boardIDInt, ponIDInt, pageIndex,
-		pageSize)
-
-	/*
-		Validate item value
-		If item is empty, return error 404
-	*/
-
+	// Check if no items found
 	if len(item) == 0 {
-		log.Error().Msg("Data not found")
-		utils.ErrorNotFound(w, fmt.Errorf("data not found")) // error 404
+		log.Warn().
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Int("page", pageIndex).
+			Msg("No ONU data found for page") // Log warning
+		appErr := apperrors.NewNotFoundError("ONU data",
+			map[string]interface{}{
+				"board_id": boardIDInt,
+				"pon_id":   ponIDInt,
+				"page":     pageIndex,
+			}) // Create not found error
+		utils.HandleError(w, appErr) // Handle error
 		return
 	}
 
 	// Convert result to JSON format according to Pages structure
-	pages := pagination.New(pageIndex, pageSize, count)
+	pages := pagination.New(pageIndex, pageSize, count) // Create pagination meta data
 
-	// Convert result to JSON format according to WebResponse structure
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Int("page", pageIndex).
+		Int("page_size", pageSize).
+		Int("total_rows", pages.TotalRows).
+		Int("page_count", pages.PageCount).
+		Msg("Successfully retrieved paginated ONU info") // Log success
+
+	// Create pagination response
 	responsePagination := pagination.Pages{
-		Code:      http.StatusOK,   // 200
-		Status:    "OK",            // "OK"
-		Page:      pages.Page,      // page
-		PageSize:  pages.PageSize,  // page size
-		PageCount: pages.PageCount, // page count
-		TotalRows: pages.TotalRows, // total rows
-		Data:      item,            // data
+		Code:      http.StatusOK,
+		Status:    "OK",
+		Page:      pages.Page,
+		PageSize:  pages.PageSize,
+		PageCount: pages.PageCount,
+		TotalRows: pages.TotalRows,
+		Data:      item,
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, responsePagination) // 200
+	utils.SendJSONResponse(w, http.StatusOK, responsePagination) // Send JSON response
+}
+
+// DeleteCache is a handler to delete cache for specific board and PON
+// example: DELETE http://localhost:8081/api/v1/board/1/pon/1
+func (o *OnuHandler) DeleteCache(w http.ResponseWriter, r *http.Request) {
+	// Get pre-validated values from context
+	boardIDInt := r.Context().Value("boardID").(int)
+	ponIDInt := r.Context().Value("ponID").(int)
+
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Deleting cache for board/pon")
+
+	// Call usecase to delete cache
+	err := o.ponUsecase.DeleteCache(r.Context(), boardIDInt, ponIDInt)
+	if err != nil {
+		log.Error().Err(err).
+			Int("board_id", boardIDInt).
+			Int("pon_id", ponIDInt).
+			Msg("Failed to delete cache")
+		utils.HandleError(w, err)
+		return
+	}
+
+	log.Info().
+		Int("board_id", boardIDInt).
+		Int("pon_id", ponIDInt).
+		Msg("Successfully deleted cache")
+
+	// Send success response
+	utils.SendJSONResponse(w, http.StatusOK, utils.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data: map[string]interface{}{
+			"message":  "Cache deleted successfully",
+			"board_id": boardIDInt,
+			"pon_id":   ponIDInt,
+		},
+	})
 }

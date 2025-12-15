@@ -1,91 +1,91 @@
 package model
 
-// OltConfig struct is a struct that represent the OLT configuration
+// OltConfig struct is a struct that represents the OLT configuration
 type OltConfig struct {
-	BaseOID                   string
-	OnuIDNameOID              string
-	OnuTypeOID                string
-	OnuSerialNumberOID        string
-	OnuRxPowerOID             string
-	OnuTxPowerOID             string
-	OnuStatusOID              string
-	OnuIPAddressOID           string
-	OnuDescriptionOID         string
-	OnuLastOnlineOID          string
-	OnuLastOfflineOID         string
-	OnuLastOfflineReasonOID   string
-	OnuGponOpticalDistanceOID string
+	BaseOID                   string // Base OID for the OLT
+	OnuIDNameOID              string // OID for the ONU ID Name
+	OnuTypeOID                string // OID for the ONU Type
+	OnuSerialNumberOID        string // OID for the ONU Serial Number
+	OnuRxPowerOID             string // OID for the ONU RX Power
+	OnuTxPowerOID             string // OID for the ONU TX Power
+	OnuStatusOID              string // OID for the ONU Status
+	OnuIPAddressOID           string // OID for the ONU IP Address
+	OnuDescriptionOID         string // OID for the ONU Description
+	OnuLastOnlineOID          string // OID for the ONU Last Online Time
+	OnuLastOfflineOID         string // OID for the ONU Last Offline Time
+	OnuLastOfflineReasonOID   string // OID for the ONU Last Offline Reason
+	OnuGponOpticalDistanceOID string // OID for the ONU GPON Optical Distance
 }
 
 // ONUInfo struct is a struct that represent the ONU information
 type ONUInfo struct {
-	ID   string `json:"onu_id"`
-	Name string `json:"name"`
+	ID   string `json:"onu_id"` // The unique identifier for the ONU
+	Name string `json:"name"`   // The name of the ONU
 }
 
-// ONUInfoPerBoard struct is a struct that represent the ONU information per board
+// ONUInfoPerBoard struct is a struct that represents the ONU information per board
 type ONUInfoPerBoard struct {
-	Board        int    `json:"board"`
-	PON          int    `json:"pon"`
-	ID           int    `json:"onu_id"`
-	Name         string `json:"name"`
-	OnuType      string `json:"onu_type"`
-	SerialNumber string `json:"serial_number"`
-	RXPower      string `json:"rx_power"`
-	Status       string `json:"status"`
+	Board        int    `json:"board"`         // The board ID where the ONU is located
+	PON          int    `json:"pon"`           // The PON ID where the ONU is connected
+	ID           int    `json:"onu_id"`        // The ID of the ONU
+	Name         string `json:"name"`          // The name of the ONU
+	OnuType      string `json:"onu_type"`      // The type of the ONU
+	SerialNumber string `json:"serial_number"` // The serial number of the ONU
+	RXPower      string `json:"rx_power"`      // The receiving power of the ONU
+	Status       string `json:"status"`        // The current status of the ONU
 }
 
-// ONUCustomerInfo struct is a struct that represent the detailed ONU information for customer
+// ONUCustomerInfo struct is a struct that represents the detailed ONU information for the customer
 type ONUCustomerInfo struct {
-	Board                int    `json:"board"`
-	PON                  int    `json:"pon"`
-	ID                   int    `json:"onu_id"`
-	Name                 string `json:"name"`
-	Description          string `json:"description"`
-	OnuType              string `json:"onu_type"`
-	SerialNumber         string `json:"serial_number"`
-	RXPower              string `json:"rx_power"`
-	TXPower              string `json:"tx_power"`
-	Status               string `json:"status"`
-	IPAddress            string `json:"ip_address"`
-	LastOnline           string `json:"last_online"`
-	LastOffline          string `json:"last_offline"`
-	Uptime               string `json:"uptime"`
-	LastDownTimeDuration string `json:"last_down_time_duration"`
-	LastOfflineReason    string `json:"offline_reason"`
-	GponOpticalDistance  string `json:"gpon_optical_distance"`
+	Board                int    `json:"board"`                   // The board ID
+	PON                  int    `json:"pon"`                     // The PON ID
+	ID                   int    `json:"onu_id"`                  // The ONU ID
+	Name                 string `json:"name"`                    // The name of the ONU
+	Description          string `json:"description"`             // Description of the ONU
+	OnuType              string `json:"onu_type"`                // Type of the ONU
+	SerialNumber         string `json:"serial_number"`           // Serial number of the ONU
+	RXPower              string `json:"rx_power"`                // RX power level
+	TXPower              string `json:"tx_power"`                // TX power level
+	Status               string `json:"status"`                  // Operational status
+	IPAddress            string `json:"ip_address"`              // IP Address assigned to the ONU
+	LastOnline           string `json:"last_online"`             // Timestamp of last online status
+	LastOffline          string `json:"last_offline"`            // Timestamp of the last offline status
+	Uptime               string `json:"uptime"`                  // Duration of uptime
+	LastDownTimeDuration string `json:"last_down_time_duration"` // Duration of last downtime
+	LastOfflineReason    string `json:"offline_reason"`          // Reason for last offline event
+	GponOpticalDistance  string `json:"gpon_optical_distance"`   // Optical distance to the ONU
 }
 
 // OnuID struct is a struct that represent the ONU ID
 type OnuID struct {
-	Board int `json:"board"`
-	PON   int `json:"pon"`
-	ID    int `json:"onu_id"`
+	Board int `json:"board"`  // Board ID
+	PON   int `json:"pon"`    // PON ID
+	ID    int `json:"onu_id"` // ONU ID
 }
 
 // OnuOnlyID struct is a struct that represent only the ONU ID without board and PON
 type OnuOnlyID struct {
-	ID int `json:"onu_id"`
+	ID int `json:"onu_id"` // ONU ID
 }
 
-// SNMPWalkTask struct is a struct that represent the SNMP walk task
+// SNMPWalkTask struct is a struct that represents the SNMP walk task
 type SNMPWalkTask struct {
-	BaseOID   string
-	TargetOID string
-	BoardID   int
-	PON       int
+	BaseOID   string // Base OID to walk
+	TargetOID string // Target OID
+	BoardID   int    // Board ID
+	PON       int    // PON ID
 }
 
-// OnuSerialNumber struct is a struct that represent the ONU serial number
+// OnuSerialNumber struct is a struct that represents the ONU serial number
 type OnuSerialNumber struct {
-	Board        int    `json:"board"`
-	PON          int    `json:"pon"`
-	ID           int    `json:"onu_id"`
-	SerialNumber string `json:"serial_number"`
+	Board        int    `json:"board"`         // Board ID
+	PON          int    `json:"pon"`           // PON ID
+	ID           int    `json:"onu_id"`        // ONU ID
+	SerialNumber string `json:"serial_number"` // Serial Number
 }
 
-// PaginationResult struct is a struct that represent the pagination result
+// PaginationResult struct is a struct that represents the pagination result
 type PaginationResult struct {
-	OnuInformationList []ONUInfoPerBoard
-	Count              int
+	OnuInformationList []ONUInfoPerBoard // List of ONU information for the current page
+	Count              int               // Total count of items
 }

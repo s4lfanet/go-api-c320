@@ -5,139 +5,174 @@ import (
 	"encoding/json"
 	"time"
 
+	apperrors "github.com/megadata-dev/go-snmp-olt-zte-c320/internal/errors"
 	"github.com/megadata-dev/go-snmp-olt-zte-c320/internal/model"
-	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
 
-// OnuRedisRepositoryInterface is an interface that represent the auth's repository contract
+// OnuRedisRepositoryInterface is an interface that represents the auth's repository contract
+// It defines the methods for interacting with Redis related to ONU data.
 type OnuRedisRepositoryInterface interface {
-	GetOnuIDCtx(ctx context.Context, key string) ([]model.OnuID, error)
-	SetOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuID) error
-	DeleteOnuIDCtx(ctx context.Context, key string) error
-	SaveONUInfoList(ctx context.Context, key string, seconds int, onuInfoList []model.ONUInfoPerBoard) error
-	GetONUInfoList(ctx context.Context, key string) ([]model.ONUInfoPerBoard, error)
-	GetOnlyOnuIDCtx(ctx context.Context, key string) ([]model.OnuOnlyID, error)
-	SaveOnlyOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuOnlyID) error
+	GetOnuIDCtx(ctx context.Context, key string) ([]model.OnuID, error)                                      // Get ONU IDs from Redis
+	SetOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuID) error                     // Set ONU IDs to Redis with expiration
+	DeleteOnuIDCtx(ctx context.Context, key string) error                                                    // Delete ONU IDs from Redis
+	SaveONUInfoList(ctx context.Context, key string, seconds int, onuInfoList []model.ONUInfoPerBoard) error // Save the list of ONU info to Redis
+	GetONUInfoList(ctx context.Context, key string) ([]model.ONUInfoPerBoard, error)                         // Get the list of ONU info from Redis
+	GetOnlyOnuIDCtx(ctx context.Context, key string) ([]model.OnuOnlyID, error)                              // Get only ONU IDs from Redis
+	SaveOnlyOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuOnlyID) error            // Save only ONU IDs to Redis
+	Delete(ctx context.Context, key string) error                                                            // Delete any key from Redis
 }
 
 // Auth redis repository
+// onuRedisRepo implements OnuRedisRepositoryInterface
 type onuRedisRepo struct {
-	redisClient *redis.Client
+	redisClient *redis.Client // Redis client instance
 }
 
-// NewOnuRedisRepo will create an object that represent the auth repository
-func NewOnuRedisRepo(redisClient *redis.Client) OnuRedisRepositoryInterface {
-	return &onuRedisRepo{redisClient}
+// NewOnuRedisRepo will create an object that represents the auth repository
+func NewOnuRedisRepo(redisClient *redis.Client) OnuRedisRepositoryInterface { // Constructor for OnuRedisRepository
+	return &onuRedisRepo{redisClient} // Return a new instance with an injected client
 }
 
 // GetOnuIDCtx is a method to get onu id from redis
 func (r *onuRedisRepo) GetOnuIDCtx(ctx context.Context, key string) ([]model.OnuID, error) {
-	onuBytes, err := r.redisClient.Get(ctx, key).Bytes()
+
+	onuBytes, err := r.redisClient.Get(ctx, key).Bytes() // Get value as bytes from Redis using a key
+
+	// Check for error
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get onu id from redis")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetOnuIDCtx.redisClient.Get")
+		// Cache miss is normal behavior, not an error - log as debug only
+		log.Debug().Str("key", key).Msg("Cache miss - key not found in Redis")
+		return nil, apperrors.NewRedisError("Get", err) // Return wrapped Redis error
 	}
 
-	var onuID []model.OnuID
-	if err := json.Unmarshal(onuBytes, &onuID); err != nil {
-		log.Error().Err(err).Msg("Failed to unmarshal onu id")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetOnuIDCtx.json.Unmarshal")
+	var onuID []model.OnuID                                  // Variable to hold the result
+	if err := json.Unmarshal(onuBytes, &onuID); err != nil { // Unmarshal JSON bytes into onuID slice
+		log.Error().Err(err).Msg("Failed to unmarshal onu id")                    // Log error
+		return nil, apperrors.NewInternalError("failed to unmarshal onu id", err) // Return wrapped internal error
 	}
 
-	return onuID, nil
+	return onuID, nil // Return the result and nil error
 }
 
 // SetOnuIDCtx is a method to set onu id to redis
 func (r *onuRedisRepo) SetOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuID) error {
-	onuBytes, err := json.Marshal(onuID)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal onu id")
-		return errors.Wrap(err, "setRedisRepo.SetNewsCtx.json.Marshal")
+
+	// Marshal onuID slice to JSON bytes
+	onuBytes, err := json.Marshal(onuID) // Marshal onuID slice to JSON bytes
+
+	// Check for error
+	if err != nil { // Check for error
+		log.Error().Err(err).Msg("Failed to marshal onu id")               // Log error
+		return apperrors.NewInternalError("failed to marshal onu id", err) // Return wrapped internal error
 	}
 
+	// Set the key in Redis with the marshaled bytes and expiration time
 	if err := r.redisClient.Set(ctx, key, onuBytes, time.Second*time.Duration(seconds)).Err(); err != nil {
-		log.Error().Err(err).Msg("Failed to set onu id to redis")
-		return errors.Wrap(err, "onuRedisRepo.SetOnuIDCtx.redisClient.Set")
+		log.Error().Err(err).Str("key", key).Msg("Failed to set onu id to redis") // Log error
+		return apperrors.NewRedisError("Set", err)                                // Return wrapped Redis error
 	}
 
-	return nil
+	return nil // Return nil on success
 }
 
 // DeleteOnuIDCtx is a method to delete onu id from redis
 func (r *onuRedisRepo) DeleteOnuIDCtx(ctx context.Context, key string) error {
-	if err := r.redisClient.Del(ctx, key).Err(); err != nil {
-		log.Error().Err(err).Msg("Failed to delete onu id from redis")
-		return errors.Wrap(err, "onuRedisRepo.DeleteOnuIDCtx.redisClient.Del")
+	if err := r.redisClient.Del(ctx, key).Err(); err != nil { // Delete key from Redis
+		log.Error().Err(err).Str("key", key).Msg("Failed to delete onu id from redis") // Log error
+		return apperrors.NewRedisError("Del", err)                                     // Return wrapped Redis error
 	}
 
-	return nil
+	return nil // Return nil on success
 }
 
-// SaveONUInfoList is a method to save onu info list to redis
+// SaveONUInfoList is a method to save one info list to redis
 func (r *onuRedisRepo) SaveONUInfoList(
 	ctx context.Context, key string, seconds int, onuInfoList []model.ONUInfoPerBoard,
 ) error {
-	onuBytes, err := json.Marshal(onuInfoList)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal onu info list")
-		return errors.Wrap(err, "onuRedisRepo.SaveONUInfoList.json.Marshal")
+	onuBytes, err := json.Marshal(onuInfoList) // Marshal list to JSON bytes
+	if err != nil {                            // Check for error
+		log.Error().Err(err).Msg("Failed to marshal onu info list")               // Log error
+		return apperrors.NewInternalError("failed to marshal onu info list", err) // Return wrapped internal error
 	}
 
+	// Set key in Redis with expiration
 	if err := r.redisClient.Set(ctx, key, onuBytes, time.Second*time.Duration(seconds)).Err(); err != nil {
-		log.Error().Err(err).Msg("Failed to set onu info list to redis")
-		return errors.Wrap(err, "onuRedisRepo.SaveONUInfoList.redisClient.Set")
+		log.Error().Err(err).Str("key", key).Msg("Failed to set onu info list to redis") // Log error
+		return apperrors.NewRedisError("Set", err)                                       // Return wrapped Redis error
 	}
 
-	return nil
+	return nil // Return nil on success
 }
 
-// GetONUInfoList is a method to get onu info list from redis
+// GetONUInfoList is a method to get one info list from redis
 func (r *onuRedisRepo) GetONUInfoList(ctx context.Context, key string) ([]model.ONUInfoPerBoard, error) {
-	onuBytes, err := r.redisClient.Get(ctx, key).Bytes()
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get onu info list from redis")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetONUInfoList.redisClient.Get")
+	onuBytes, err := r.redisClient.Get(ctx, key).Bytes() // Get value as bytes from Redis
+	if err != nil {                                      // Check for error
+		// Cache miss is normal behavior, not an error - log as debug only
+		log.Debug().Str("key", key).Msg("Cache miss - key not found in Redis")
+		return nil, apperrors.NewRedisError("Get", err) // Return wrapped Redis error
 	}
 
-	var onuInfoList []model.ONUInfoPerBoard
-	if err := json.Unmarshal(onuBytes, &onuInfoList); err != nil {
-		log.Error().Err(err).Msg("Failed to unmarshal onu info list")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetONUInfoList.json.Unmarshal")
+	var onuInfoList []model.ONUInfoPerBoard                        // Variable to hold a result
+	if err := json.Unmarshal(onuBytes, &onuInfoList); err != nil { // Unmarshal JSON to struct
+		log.Error().Err(err).Msg("Failed to unmarshal onu info list")                    // Log error
+		return nil, apperrors.NewInternalError("failed to unmarshal onu info list", err) // Return wrapped internal error
 	}
 
-	return onuInfoList, nil
+	return onuInfoList, nil // Return result
 }
 
 // GetOnlyOnuIDCtx is a method to get only onu id from redis
 func (r *onuRedisRepo) GetOnlyOnuIDCtx(ctx context.Context, key string) ([]model.OnuOnlyID, error) {
-	onuBytes, err := r.redisClient.Get(ctx, key).Bytes()
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get onu id from redis")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetOnlyOnuIDCtx.redisClient.Get")
+	onuBytes, err := r.redisClient.Get(ctx, key).Bytes() // Get value as bytes from Redis
+	if err != nil {                                      // Check for error
+		// Cache miss is normal behavior, not an error - log as debug only
+		log.Debug().Str("key", key).Msg("Cache miss - key not found in Redis")
+		return nil, apperrors.NewRedisError("Get", err) // Return wrapped Redis error
 	}
 
-	var onuID []model.OnuOnlyID
-	if err := json.Unmarshal(onuBytes, &onuID); err != nil {
-		log.Error().Err(err).Msg("Failed to unmarshal onu id")
-		return nil, errors.Wrap(err, "onuRedisRepo.GetOnlyOnuIDCtx.json.Unmarshal")
+	var onuID []model.OnuOnlyID                              // Variable to hold a result
+	if err := json.Unmarshal(onuBytes, &onuID); err != nil { // Unmarshal JSON
+		log.Error().Err(err).Msg("Failed to unmarshal onu id")                    // Log error
+		return nil, apperrors.NewInternalError("failed to unmarshal onu id", err) // Return wrapped internal error
 	}
 
-	return onuID, nil
+	return onuID, nil // Return result
 }
 
 // SaveOnlyOnuIDCtx is a method to save only onu id to redis
 func (r *onuRedisRepo) SaveOnlyOnuIDCtx(ctx context.Context, key string, seconds int, onuID []model.OnuOnlyID) error {
-	onuBytes, err := json.Marshal(onuID)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal onu id")
-		return errors.Wrap(err, "onuRedisRepo.SaveOnlyOnuIDCtx.json.Marshal")
+	onuBytes, err := json.Marshal(onuID) // Marshal struct to JSON
+	if err != nil {                      // Check for error
+		log.Error().Err(err).Msg("Failed to marshal onu id")               // Log error
+		return apperrors.NewInternalError("failed to marshal onu id", err) // Return wrapped internal error
 	}
 
+	// Set key in Redis with expiration
 	if err := r.redisClient.Set(ctx, key, onuBytes, time.Second*time.Duration(seconds)).Err(); err != nil {
-		log.Error().Err(err).Msg("Failed to set onu id to redis")
-		return errors.Wrap(err, "onuRedisRepo.SaveOnlyOnuIDCtx.redisClient.Set")
+		log.Error().Err(err).Str("key", key).Msg("Failed to set onu id to redis") // Log error
+		return apperrors.NewRedisError("Set", err)                                // Return wrapped Redis error
+	}
+
+	return nil // Return nil
+}
+
+// Delete is a method to delete any key from redis
+func (r *onuRedisRepo) Delete(ctx context.Context, key string) error {
+	// Delete key from Redis
+	result, err := r.redisClient.Del(ctx, key).Result()
+	if err != nil {
+		log.Error().Err(err).Str("key", key).Msg("Failed to delete key from redis")
+		return apperrors.NewRedisError("Delete", err)
+	}
+
+	// Log result
+	if result == 0 {
+		log.Warn().Str("key", key).Msg("Key not found in redis (already deleted or never existed)")
+	} else {
+		log.Info().Str("key", key).Int64("deleted_count", result).Msg("Successfully deleted key from redis")
 	}
 
 	return nil

@@ -23,7 +23,7 @@ type snmpRepository struct {
 
 // NewPonRepository is a constructor function to create a new instance of snmpRepository
 func NewPonRepository(target string, community string, port uint16) SnmpRepositoryInterface {
-	return &snmpRepository{
+	return &snmpRepository{ // Return a pointer to the new snmpRepository struct
 		target:    target,    // SNMP target IP address
 		community: community, // SNMP community string
 		port:      port,      // SNMP port number
@@ -32,17 +32,18 @@ func NewPonRepository(target string, community string, port uint16) SnmpReposito
 
 // buildSNMPInstance for creating a new SNMP instance
 func (r *snmpRepository) buildSNMPInstance() (*gosnmp.GoSNMP, error) {
-	params := &gosnmp.GoSNMP{
+	params := &gosnmp.GoSNMP{ // Initialize GoSNMP struct with parameters
 		Target:    r.target,                       // SNMP target IP address
 		Port:      r.port,                         // SNMP port number
 		Community: r.community,                    // SNMP community string
-		Version:   gosnmp.Version2c,               // SNMP version
-		Timeout:   time.Duration(3) * time.Second, // SNMP timeout
+		Version:   gosnmp.Version2c,               // SNMP version (using 2c)
+		Timeout:   time.Duration(3) * time.Second, // SNMP timeout set to 3 seconds
 		Retries:   1,                              // Number of retries for SNMP requests
 	}
 
-	// Set logger to nil to disable logging
-	if err := params.Connect(); err != nil {
+	// Set logger to nil to disable logging (default behavior of gosnmp if not set)
+	// Connect creates a udp connection
+	if err := params.Connect(); err != nil { // Attempt to establish connection
 		return nil, fmt.Errorf("SNMP Connect error: %w", err) // Error connecting to SNMP target
 	}
 	return params, nil // Return the SNMP instance
@@ -52,38 +53,38 @@ func (r *snmpRepository) buildSNMPInstance() (*gosnmp.GoSNMP, error) {
 func (r *snmpRepository) Get(oids []string) (*gosnmp.SnmpPacket, error) {
 	snmp, err := r.buildSNMPInstance() // Create a new SNMP instance
 	if err != nil {
-		return nil, err
+		return nil, err // Return error if instance creation failed
 	}
-	defer func(Conn net.Conn) {
-		err := Conn.Close()
-		if err != nil {
-			fmt.Printf("Error closing SNMP connection: %v\n", err)
+	defer func(Conn net.Conn) { // Defer closing the connection
+		err := Conn.Close() // Close the connection
+		if err != nil {     // Check for close errors
+			fmt.Printf("Error closing SNMP connection: %v\n", err) // Log error to console
 		}
 	}(snmp.Conn)
 
-	result, err := snmp.Get(oids)
+	result, err := snmp.Get(oids) // Perform SNMP GET operation
 	if err != nil {
-		return nil, fmt.Errorf("SNMP Get failed: %w", err)
+		return nil, fmt.Errorf("SNMP Get failed: %w", err) // Return wrapped error on failure
 	}
-	return result, nil
+	return result, nil // Return result on success
 }
 
 // Walk for SNMP Walk to get all OIDs under the given OID
 func (r *snmpRepository) Walk(oid string, walkFunc func(pdu gosnmp.SnmpPDU) error) error {
-	snmp, err := r.buildSNMPInstance()
+	snmp, err := r.buildSNMPInstance() // Create a new SNMP instance
 	if err != nil {
-		return err
+		return err // Return error if creation failed
 	}
-	defer func(Conn net.Conn) {
-		err := Conn.Close()
+	defer func(Conn net.Conn) { // Defer closing the connection
+		err := Conn.Close() // Close connection
 		if err != nil {
-			fmt.Printf("Error closing SNMP connection: %v\n", err)
+			fmt.Printf("Error closing SNMP connection: %v\n", err) // Log error
 		}
 	}(snmp.Conn)
 
-	err = snmp.Walk(oid, walkFunc)
+	err = snmp.Walk(oid, walkFunc) // Perform SNMP WALK operation with the callback function
 	if err != nil {
-		return fmt.Errorf("SNMP Walk failed: %w", err)
+		return fmt.Errorf("SNMP Walk failed: %w", err) // Return wrapped error on failure
 	}
-	return nil
+	return nil // Return nil on success
 }
