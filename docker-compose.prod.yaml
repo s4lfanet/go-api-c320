@@ -6,7 +6,7 @@
 #   2. Edit .env.prod with production credentials
 #   3. Run: docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d
 #
-# IMPORTANT: Keep .env.prod secure and gitignored
+# IMPORTANT: Keep .env.prod secure and gitignore
 
 services:
   app:
@@ -96,7 +96,7 @@ services:
       retries: 3
 
     # Use Redis with password in production (recommended)
-    # command: redis-server --requirepass ${REDIS_PASSWORD}
+    # command: redis-server --requires ${REDIS_PASSWORD}
 
 networks:
   snmp-olt-network:
