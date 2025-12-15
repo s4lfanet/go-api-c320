@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	apperrors "github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/errors"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/middleware"
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/usecase"
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/utils"
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/pkg/pagination"
@@ -35,8 +36,8 @@ func NewOnuHandler(ponUsecase usecase.OnuUseCaseInterface) *OnuHandler {
 // example: http://localhost:8080/api/v1/board/1/pon/1
 func (o *OnuHandler) GetByBoardIDAndPonID(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int) // Retrieve boardID from context
-	ponIDInt := r.Context().Value("ponID").(int)     // Retrieve ponID from context
+	boardIDInt, _ := middleware.GetBoardID(r.Context()) // Retrieve boardID from context
+	ponIDInt, _ := middleware.GetPonID(r.Context())     // Retrieve ponID from context
 
 	log.Info().
 		Int("board_id", boardIDInt).
@@ -100,9 +101,9 @@ func (o *OnuHandler) GetByBoardIDAndPonID(w http.ResponseWriter, r *http.Request
 // example: http://localhost:8080/api/v1/board/1/pon/1/onu/1
 func (o *OnuHandler) GetByBoardIDPonIDAndOnuID(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int) // Get boardID
-	ponIDInt := r.Context().Value("ponID").(int)     // Get ponID
-	onuIDInt := r.Context().Value("onuID").(int)     // Get onuID
+	boardIDInt, _ := middleware.GetBoardID(r.Context()) // Get boardID
+	ponIDInt, _ := middleware.GetPonID(r.Context())     // Get ponID
+	onuIDInt, _ := middleware.GetOnuID(r.Context())     // Get onuID
 
 	log.Info().
 		Int("board_id", boardIDInt).
@@ -156,8 +157,8 @@ func (o *OnuHandler) GetByBoardIDPonIDAndOnuID(w http.ResponseWriter, r *http.Re
 // example: http://localhost:8080/api/v1/board/1/pon/1/onu_id/empty
 func (o *OnuHandler) GetEmptyOnuID(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int)
-	ponIDInt := r.Context().Value("ponID").(int)
+	boardIDInt, _ := middleware.GetBoardID(r.Context())
+	ponIDInt, _ := middleware.GetPonID(r.Context())
 
 	log.Info().
 		Int("board_id", boardIDInt).
@@ -196,8 +197,8 @@ func (o *OnuHandler) GetEmptyOnuID(w http.ResponseWriter, r *http.Request) {
 // example: http://localhost:8080/api/v1/board/1/pon/1/onu_id_sn
 func (o *OnuHandler) GetOnuIDAndSerialNumber(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int)
-	ponIDInt := r.Context().Value("ponID").(int)
+	boardIDInt, _ := middleware.GetBoardID(r.Context())
+	ponIDInt, _ := middleware.GetPonID(r.Context())
 
 	log.Info().
 		Int("board_id", boardIDInt).
@@ -236,8 +237,8 @@ func (o *OnuHandler) GetOnuIDAndSerialNumber(w http.ResponseWriter, r *http.Requ
 // example: http://localhost:8080/api/v1/board/1/pon/1/onu_id/update
 func (o *OnuHandler) UpdateEmptyOnuID(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int)
-	ponIDInt := r.Context().Value("ponID").(int)
+	boardIDInt, _ := middleware.GetBoardID(r.Context())
+	ponIDInt, _ := middleware.GetPonID(r.Context())
 
 	log.Info().
 		Int("board_id", boardIDInt).
@@ -275,8 +276,8 @@ func (o *OnuHandler) UpdateEmptyOnuID(w http.ResponseWriter, r *http.Request) {
 // example: http://localhost:8080/api/v1/paginate/board/1/pon/1?page=1&page_size=10
 func (o *OnuHandler) GetByBoardIDAndPonIDWithPaginate(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int)
-	ponIDInt := r.Context().Value("ponID").(int)
+	boardIDInt, _ := middleware.GetBoardID(r.Context())
+	ponIDInt, _ := middleware.GetPonID(r.Context())
 
 	// Get page and page size parameters from the request
 	pageIndex, pageSize := pagination.GetPaginationParametersFromRequest(r)
@@ -338,8 +339,8 @@ func (o *OnuHandler) GetByBoardIDAndPonIDWithPaginate(w http.ResponseWriter, r *
 // example: DELETE http://localhost:8081/api/v1/board/1/pon/1
 func (o *OnuHandler) DeleteCache(w http.ResponseWriter, r *http.Request) {
 	// Get pre-validated values from context
-	boardIDInt := r.Context().Value("boardID").(int)
-	ponIDInt := r.Context().Value("ponID").(int)
+	boardIDInt, _ := middleware.GetBoardID(r.Context())
+	ponIDInt, _ := middleware.GetPonID(r.Context())
 
 	log.Info().
 		Int("board_id", boardIDInt).
