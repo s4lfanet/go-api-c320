@@ -1,12 +1,20 @@
 package config
 
 import (
+	"os"
 	"testing"
 )
 
 // TestGenerateBoardPonOID verifies that dynamic OID generation matches expected values
 // These test cases validate against the original hardcoded cfg.yaml values
 func TestGenerateBoardPonOID(t *testing.T) {
+	// Set firmware version to V2.2 for these tests (expected values are V2.2 OIDs)
+	os.Setenv("ZTE_FIRMWARE_VERSION", "v2.2")
+	defer os.Unsetenv("ZTE_FIRMWARE_VERSION")
+
+	// Re-initialize OID variables with V2.2 profile
+	reinitializeOIDVariables()
+
 	tests := []struct {
 		name    string
 		boardID int
@@ -175,6 +183,13 @@ func TestGenerateBoardPonOID(t *testing.T) {
 
 // TestInitializeBoardPonMap verifies that all 32 Board-PON combinations are generated
 func TestInitializeBoardPonMap(t *testing.T) {
+	// Set firmware version to V2.2 for these tests (expected values are V2.2 OIDs)
+	os.Setenv("ZTE_FIRMWARE_VERSION", "v2.2")
+	defer os.Unsetenv("ZTE_FIRMWARE_VERSION")
+
+	// Re-initialize OID variables with V2.2 profile
+	reinitializeOIDVariables()
+
 	boardPonMap, err := InitializeBoardPonMap()
 	if err != nil {
 		t.Fatalf("InitializeBoardPonMap() error = %v", err)

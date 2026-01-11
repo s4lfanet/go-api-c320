@@ -49,9 +49,9 @@ var OIDProfiles = map[FirmwareVersion]*OIDProfile{
 		// Based on actual SNMP walk results from ZTE C320 V2.1.0
 		// ONU Table: .3.13.3.1.{column}.{pon_index}.{onu_id}
 		// ONU Statistics: .3.31.4.1.{column}.{pon_index}.{onu_id}
-		OnuIDNamePrefix:              ".3.13.3.1.5",  // ONU Device SN (STRING, e.g., "GD824CDF3")
-		OnuTypePrefix:                ".3.13.3.1.10", // ONU Model (STRING, e.g., "F672YV9.1")
-		OnuSerialNumberPrefix:        ".3.13.3.1.2",  // ONU Serial Number (Hex-STRING)
+		OnuIDNamePrefix:              ".3.13.3.1.5",   // ONU Device SN (STRING, e.g., "GD824CDF3")
+		OnuTypePrefix:                ".3.13.3.1.10",  // ONU Model (STRING, e.g., "F672YV9.1")
+		OnuSerialNumberPrefix:        ".3.13.3.1.2",   // ONU Serial Number (Hex-STRING)
 		OnuRxPowerPrefix:             ".3.31.4.1.100", // ONU Status - no RxPower available in V2.1
 		OnuTxPowerPrefix:             ".3.31.4.1.100", // ONU Status - no TxPower available in V2.1
 		OnuStatusIDPrefix:            ".3.31.4.1.100", // ONU Online Status (INTEGER: 1=online)
@@ -65,12 +65,12 @@ var OIDProfiles = map[FirmwareVersion]*OIDProfile{
 		// Board1 PON1: 268501248, PON2: 268501504, etc
 		// Formula: base + (ponID * increment) = pon_index
 		// So for PON1: 268500992 + (1 * 256) = 268501248 ✓
-		Board1OnuIDBase:              268500992, // Base for Board 1 (268501248 - 256)
-		Board1OnuTypeBase:            268500992, // Same as OnuID for V2.1
-		Board2OnuIDBase:              268509184, // Board 2 = 268500992 + 8192
-		Board2OnuTypeBase:            268509184, // Same as OnuID for V2.1
-		OnuIDIncrement:               256, // V2.1 increments by 256 per PON
-		OnuTypeIncrement:             256, // Same increment
+		Board1OnuIDBase:   268500992, // Base for Board 1 (268501248 - 256)
+		Board1OnuTypeBase: 268500992, // Same as OnuID for V2.1
+		Board2OnuIDBase:   268509184, // Board 2 = 268500992 + 8192
+		Board2OnuTypeBase: 268509184, // Same as OnuID for V2.1
+		OnuIDIncrement:    256,       // V2.1 increments by 256 per PON
+		OnuTypeIncrement:  256,       // Same increment
 	},
 	FirmwareV22: {
 		Name:    "ZTE C320 V2.2+",
@@ -172,6 +172,31 @@ var (
 	OnuIDIncrement   = getOIDEnvAsInt("ONU_ID_INCREMENT", GetOIDProfile().OnuIDIncrement)
 	OnuTypeIncrement = getOIDEnvAsInt("ONU_TYPE_INCREMENT", GetOIDProfile().OnuTypeIncrement)
 )
+
+// reinitializeOIDVariables reloads all OID variables from the current firmware profile.
+// This is useful for testing when switching firmware versions at runtime.
+func reinitializeOIDVariables() {
+	profile := GetOIDProfile()
+	BaseOID1 = getOIDEnv("OLT_BASE_OID", profile.BaseOID)
+	OnuIDNamePrefix = getOIDEnv("ONU_ID_NAME_PREFIX", profile.OnuIDNamePrefix)
+	OnuTypePrefix = getOIDEnv("ONU_TYPE_PREFIX", profile.OnuTypePrefix)
+	OnuSerialNumberPrefix = getOIDEnv("ONU_SERIAL_NUMBER_PREFIX", profile.OnuSerialNumberPrefix)
+	OnuRxPowerPrefix = getOIDEnv("ONU_RX_POWER_PREFIX", profile.OnuRxPowerPrefix)
+	OnuTxPowerPrefix = getOIDEnv("ONU_TX_POWER_PREFIX", profile.OnuTxPowerPrefix)
+	OnuStatusIDPrefix = getOIDEnv("ONU_STATUS_ID_PREFIX", profile.OnuStatusIDPrefix)
+	OnuIPAddressPrefix = getOIDEnv("ONU_IP_ADDRESS_PREFIX", profile.OnuIPAddressPrefix)
+	OnuDescriptionPrefix = getOIDEnv("ONU_DESCRIPTION_PREFIX", profile.OnuDescriptionPrefix)
+	OnuLastOnlineTimePrefix = getOIDEnv("ONU_LAST_ONLINE_PREFIX", profile.OnuLastOnlineTimePrefix)
+	OnuLastOfflineTimePrefix = getOIDEnv("ONU_LAST_OFFLINE_PREFIX", profile.OnuLastOfflineTimePrefix)
+	OnuLastOfflineReasonPrefix = getOIDEnv("ONU_LAST_OFFLINE_REASON_PREFIX", profile.OnuLastOfflineReasonPrefix)
+	OnuGponOpticalDistancePrefix = getOIDEnv("ONU_GPON_OPTICAL_DISTANCE_PREFIX", profile.OnuGponOpticalDistancePrefix)
+	Board1OnuIDBase = getOIDEnvAsInt("BOARD1_ONU_ID_BASE", profile.Board1OnuIDBase)
+	Board1OnuTypeBase = getOIDEnvAsInt("BOARD1_ONU_TYPE_BASE", profile.Board1OnuTypeBase)
+	Board2OnuIDBase = getOIDEnvAsInt("BOARD2_ONU_ID_BASE", profile.Board2OnuIDBase)
+	Board2OnuTypeBase = getOIDEnvAsInt("BOARD2_ONU_TYPE_BASE", profile.Board2OnuTypeBase)
+	OnuIDIncrement = getOIDEnvAsInt("ONU_ID_INCREMENT", profile.OnuIDIncrement)
+	OnuTypeIncrement = getOIDEnvAsInt("ONU_TYPE_INCREMENT", profile.OnuTypeIncrement)
+}
 
 // GenerateBoardPonOID generates all OID configurations for a specific Board-PON combination
 // using mathematical formulas instead of hardcoded config file entries.
