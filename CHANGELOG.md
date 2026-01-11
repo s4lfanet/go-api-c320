@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Automated VPS Installation Scripts**
+  - Added `scripts/install.sh` - Full automated installer for Linux VPS (Ubuntu, Debian, CentOS, Rocky)
+  - Added `scripts/install-quickstart.sh` - One-line installation command
+  - Added `scripts/deploy-v21.sh` - Interactive deployment management script
+  - Added `docs/INSTALLATION.md` - Comprehensive 600+ line installation guide
+  - Auto-installs Go 1.25.5, Redis 7.2, and systemd service
+  - Environment variable configuration wizard
+  - Support for firmware version selection (v2.1/v2.2)
+
+### Changed
+- Updated README.md with automated installation section
+- Updated repository URLs from old organization to s4lfanet
+
+### Fixed
+- **CI/CD golangci-lint Compatibility**
+  - Fixed `routes_test.go` type mismatch for `trafficHandler` parameter
+  - Changed from `*handler.TrafficHandler` to `handler.TrafficHandlerInterface` in all 7 test functions
+  - Ensures strict type checking passes in GitHub Actions CI/CD
+
+## [1.7.2] - 2026-01-12
+
+### Added
 - **Phase 7.2: Optical Power Monitoring via Telnet**
   - Added `internal/repository/telnet_optical.go` - Optical power data retrieval via Telnet
   - Added `GetONUOpticalInfo()` - Retrieve optical info for specific ONU
