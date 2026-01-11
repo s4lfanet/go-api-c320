@@ -265,7 +265,7 @@ func (h *ConfigBackupHandler) ExportBackup(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Disposition", "attachment; filename="+backupID+".json")
 	w.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(w).Encode(backup)
+	_ = json.NewEncoder(w).Encode(backup)
 }
 
 // ImportBackup godoc
