@@ -12,7 +12,7 @@ import (
 	"github.com/s4lfanet/go-api-c320/internal/middleware"
 )
 
-func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface, batchHandler handler.BatchOperationsHandlerInterface, configBackupHandler *handler.ConfigBackupHandler) http.Handler { // Function to configure and return the HTTP router
+func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface, batchHandler handler.BatchOperationsHandlerInterface, configBackupHandler *handler.ConfigBackupHandler, monitoringHandler *handler.MonitoringHandler) http.Handler { // Function to configure and return the HTTP router
 
 	// Initialize logger
 	l := log.Output(zerolog.ConsoleWriter{ // Create a new logger with console writer output
@@ -160,6 +160,13 @@ func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, 
 
 		// Restore operations
 		r.Post("/restore/{backupId}", configBackupHandler.RestoreFromBackup) // POST restore from backup
+	})
+
+	// Define routes for /api/v1/monitoring (Phase 7.1)
+	apiV1Group.Route("/monitoring", func(r chi.Router) {
+		r.Get("/onu/{pon}/{onuId}", monitoringHandler.GetONUMonitoring) // GET real-time ONU monitoring
+		r.Get("/pon/{pon}", monitoringHandler.GetPONMonitoring)         // GET PON monitoring with all ONUs
+		r.Get("/olt", monitoringHandler.GetOLTMonitoring)               // GET OLT summary
 	})
 
 	// Mount /api/v1/ to root router

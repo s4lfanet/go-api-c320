@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -88,4 +89,91 @@ func ConvertByteArrayToDateTime(byteArray []byte) (string, error) {
 
 	// Convert to standardized string format "YYYY-MM-DD HH:MM:SS"
 	return datetime.Format("2006-01-02 15:04:05"), nil
+}
+
+// FormatBytesRate formats bytes to human-readable rate (simplified)
+// Note: This is a cumulative counter, not actual rate. For accurate rate, need time-based sampling.
+func FormatBytesRate(bytes uint64) string {
+	const (
+		KB = 1024
+		MB = 1024 * KB
+		GB = 1024 * MB
+	)
+
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.2f GB", float64(bytes)/float64(GB))
+	case bytes >= MB:
+		return fmt.Sprintf("%.2f MB", float64(bytes)/float64(MB))
+	case bytes >= KB:
+		return fmt.Sprintf("%.2f KB", float64(bytes)/float64(KB))
+	default:
+		return fmt.Sprintf("%d bytes", bytes)
+	}
+}
+
+// ParseOID parses an OID string and returns the numeric parts as integers
+func ParseOID(oid string) []int {
+	// Remove leading dot if present
+	oid = strings.TrimPrefix(oid, ".")
+
+	parts := strings.Split(oid, ".")
+	result := make([]int, 0, len(parts))
+
+	for _, part := range parts {
+		if num, err := strconv.Atoi(part); err == nil {
+			result = append(result, num)
+		}
+	}
+
+	return result
+}
+
+// ConvertStringToInt converts string to int (alias for ConvertStringToInteger for consistency)
+func ConvertStringToInt(str string) int {
+	return ConvertStringToInteger(str)
+}
+
+// ExtractStringValue extracts string value from SNMP variable
+func ExtractStringValue(variable interface{}) string {
+	switch v := variable.(type) {
+	case string:
+		return v
+	case []byte:
+		return string(v)
+	default:
+		return ""
+	}
+}
+
+// ExtractIntValue extracts integer value from SNMP variable
+func ExtractIntValue(variable interface{}) int {
+	switch v := variable.(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case uint:
+		return int(v)
+	case uint64:
+		return int(v)
+	default:
+		return 0
+	}
+}
+
+// ExtractUint64Value extracts uint64 value from SNMP variable
+func ExtractUint64Value(variable interface{}) uint64 {
+	switch v := variable.(type) {
+	case uint64:
+		return v
+	case int:
+		return uint64(v)
+	case int64:
+		return uint64(v)
+	case uint:
+		return uint64(v)
+	default:
+		return 0
+	}
 }

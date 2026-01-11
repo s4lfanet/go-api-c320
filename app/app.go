@@ -101,6 +101,7 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	// Initialize repository
 	snmpRepo := repository.NewPonRepository(snmpConn.Target, snmpConn.Community, snmpConn.Port) // Create a new PON repository with SNMP details
 	redisRepo := repository.NewOnuRedisRepo(redisClient)                                        // Create new ONU Redis repository
+	onuRepo := repository.NewOnuRepository(snmpConn, cfg)                                       // Create new ONU repository for monitoring
 
 	// Initialize Telnet session manager
 	telnetCfg := config.LoadTelnetConfig()                                // Load telnet configuration
@@ -116,24 +117,26 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)                       // Create new Traffic usecase with telnet manager
 	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg)                 // Create new ONU Management usecase with telnet manager
 	batchUsecase := usecase.NewBatchOperationsUsecase(telnetSessionManager, onuMgmtUsecase, cfg) // Create new Batch Operations usecase
+	monitoringUsecase := usecase.NewMonitoringUsecase(snmpConn, cfg, onuRepo)                    // Create new Monitoring usecase (Phase 7.1)
 
 	// Initialize handler
-	onuHandler := handler.NewOnuHandler(onuUsecase)                   // Create new ONU handler with usecase
-	ponHandler := handler.NewPonHandler(ponUsecase)                   // Create new PON handler with usecase
-	profileHandler := handler.NewProfileHandler(profileUsecase)       // Create new Profile handler with usecase
-	cardHandler := handler.NewCardHandler(cardUsecase)                // Create new Card handler with usecase
-	provisionHandler := handler.NewProvisionHandler(provisionUsecase) // Create new Provision handler with usecase
-	vlanHandler := handler.NewVLANHandler(vlanUsecase)                // Create new VLAN handler with usecase
-	trafficHandler := handler.NewTrafficHandler(trafficUsecase)       // Create new Traffic handler with usecase
-	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase) // Create new ONU Management handler with usecase
-	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)   // Create new Batch Operations handler with usecase
+	onuHandler := handler.NewOnuHandler(onuUsecase)                      // Create new ONU handler with usecase
+	ponHandler := handler.NewPonHandler(ponUsecase)                      // Create new PON handler with usecase
+	profileHandler := handler.NewProfileHandler(profileUsecase)          // Create new Profile handler with usecase
+	cardHandler := handler.NewCardHandler(cardUsecase)                   // Create new Card handler with usecase
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)    // Create new Provision handler with usecase
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)                   // Create new VLAN handler with usecase
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)          // Create new Traffic handler with usecase
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)    // Create new ONU Management handler with usecase
+	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)      // Create new Batch Operations handler with usecase
+	monitoringHandler := handler.NewMonitoringHandler(monitoringUsecase) // Create new Monitoring handler (Phase 7.1)
 
 	// Initialize Config Backup handler (Phase 6.2)
 	configBackupUsecase := usecase.NewConfigBackupUsecase(cfg, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase) // Create config backup usecase
 	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)                                                // Create new Config Backup handler
 
 	// Initialize router
-	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler) // Load all routes and middleware, assigning to app router
+	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler, monitoringHandler) // Load all routes and middleware, assigning to app router
 
 	// Start server
 	addr := "8081"          // Define the server address/port
