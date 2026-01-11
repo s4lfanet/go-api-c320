@@ -76,10 +76,20 @@ func TestExtractSerialNumber(t *testing.T) {
 		oidValue interface{}
 		expected string
 	}{
-		{"1,SerialNumber", "SerialNumber"},
-		{"SerialNumber", "SerialNumber"},
-		{[]byte("1,SerialNumber"), "SerialNumber"},
-		{[]byte("SerialNumber"), "SerialNumber"},
+		// String inputs - "1," prefix is stripped, then checked for ASCII printable
+		{"1,SerialNumber", "SerialNumber"},      // String with prefix removed, ASCII printable
+		{"SerialNumber", "SerialNumber"},        // String without prefix, ASCII printable
+		{"ZTEG1234", "ZTEG1234"},                // Short ASCII serial (8 chars, printable)
+		
+		// Byte slice inputs - processed as GPON format (4 vendor + 4 serial hex)
+		// 8+ bytes: first 4 = vendor ID, bytes 4-8 = hex encoded serial
+		{[]byte{0x5A, 0x54, 0x45, 0x47, 0xD8, 0x24, 0xCD, 0xF3}, "ZTEGD824CDF3"}, // Real GPON format
+		{[]byte("TEST1234"), "TEST31323334"}, // 8 ASCII bytes: "TEST" + hex("1234")
+		
+		// Short byte slices (< 8 bytes) - return as string if printable
+		{[]byte("ABCD"), "ABCD"},             // 4 bytes, printable ASCII
+		
+		// Non-string/byte returns empty
 		{10, ""},
 	}
 
