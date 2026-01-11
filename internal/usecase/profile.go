@@ -224,11 +224,11 @@ func (u *profileUsecase) GetAllVlanProfiles(ctx context.Context) ([]*model.VlanP
 		vlanName := ""
 		for i := 0; i < length && i < len(asciiParts); i++ {
 			asciiVal := 0
-			fmt.Sscanf(asciiParts[i], "%d", &asciiVal)
-			if asciiVal > 0 && asciiVal < 128 {
-				vlanName += string(rune(asciiVal))
-			}
+		_, _ = fmt.Sscanf(asciiParts[i], "%d", &asciiVal)
+		if asciiVal > 0 && asciiVal < 128 {
+			vlanName += string(rune(asciiVal))
 		}
+	}
 
 		if vlanName == "" {
 			return nil
