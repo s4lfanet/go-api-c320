@@ -140,6 +140,8 @@ func LoadConfig() (*Config, error) {
 		BaseOID2:        getEnv("OLT_BASE_OID_2", BaseOID2), // Fallback to constant
 		OnuIDNameAllPon: getEnv("ONU_ID_NAME_PREFIX", OnuIDNamePrefix),
 		OnuTypeAllPon:   getEnv("ONU_TYPE_PREFIX", OnuTypePrefix),
+		Host:            getEnv("OLT_HOST", ""),
+		BackupDir:       getEnv("BACKUP_DIR", "/var/lib/go-snmp-olt/backups"),
 	}
 
 	// ===================================================================

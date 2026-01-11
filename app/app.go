@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	rds "github.com/redis/go-redis/v9"
@@ -70,6 +71,7 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	snmpConn, err := snmp.SetupSnmpConnection(cfg) // Setup SNMP connection using configuration
 	if err != nil {                                // Check if setup failed
 		log.Error().Err(err).Msg("Failed to setup SNMP connection") // Log the error
+		return fmt.Errorf("SNMP setup failed: %w", err)
 	}
 
 	// Check SNMP connection
