@@ -19,7 +19,7 @@ We take the security of Go SNMP OLT ZTE C320 seriously. If you believe you have 
 
 Instead, please report them via email to:
 - **Primary Contact**: admin@ckt.co.id
-- **Alternative**: Create a [Security Advisory](https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/security/advisories/new)
+- **Alternative**: Create a [Security Advisory](https://github.com/s4lfanet/go-api-c320/security/advisories/new)
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up to ensure we received your original message.
 

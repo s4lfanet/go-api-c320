@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/handler"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/usecase"
+	"github.com/s4lfanet/go-api-c320/internal/handler"
+	"github.com/s4lfanet/go-api-c320/internal/model"
+	"github.com/s4lfanet/go-api-c320/internal/usecase"
 )
 
 // mockOnuUsecase for testing routes

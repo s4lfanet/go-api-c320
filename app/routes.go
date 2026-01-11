@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/handler"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/middleware"
+	"github.com/s4lfanet/go-api-c320/internal/handler"
+	"github.com/s4lfanet/go-api-c320/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

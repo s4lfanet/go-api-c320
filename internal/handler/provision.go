@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	apperrors "github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/errors"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/usecase"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/utils"
+	apperrors "github.com/s4lfanet/go-api-c320/internal/errors"
+	"github.com/s4lfanet/go-api-c320/internal/model"
+	"github.com/s4lfanet/go-api-c320/internal/usecase"
+	"github.com/s4lfanet/go-api-c320/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
 )

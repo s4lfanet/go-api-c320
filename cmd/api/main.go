@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/app"
+	"github.com/s4lfanet/go-api-c320/app"
 	"github.com/rs/zerolog/log"
 )
 

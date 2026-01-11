@@ -610,4 +610,4 @@ var (
 
 
 ### LICENSE
-[MIT License](https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/blob/main/LICENSE)
+[MIT License](https://github.com/s4lfanet/go-api-c320/blob/main/LICENSE)

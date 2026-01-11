@@ -1,4 +1,4 @@
-module github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320
+module github.com/s4lfanet/go-api-c320
 
 go 1.24.0
 

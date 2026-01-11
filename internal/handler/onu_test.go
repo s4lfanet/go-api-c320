@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/middleware"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
+	"github.com/s4lfanet/go-api-c320/internal/middleware"
+	"github.com/s4lfanet/go-api-c320/internal/model"
 	"github.com/go-chi/chi/v5"
 )
 

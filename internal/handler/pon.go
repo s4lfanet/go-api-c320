@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/middleware"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/usecase"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/utils"
+	"github.com/s4lfanet/go-api-c320/internal/middleware"
+	"github.com/s4lfanet/go-api-c320/internal/usecase"
+	"github.com/s4lfanet/go-api-c320/internal/utils"
 	"github.com/rs/zerolog/log"
 )
 

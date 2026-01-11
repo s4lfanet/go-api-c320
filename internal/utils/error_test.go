@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	apperrors "github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/errors"
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
+	apperrors "github.com/s4lfanet/go-api-c320/internal/errors"
+	"github.com/s4lfanet/go-api-c320/internal/model"
 )
 
 func TestSendJSONResponse(t *testing.T) {

@@ -133,7 +133,7 @@ journalctl -u go-snmp-olt -f
 
 ```bash
 # Clone repository
-git clone https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320.git
+git clone https://github.com/s4lfanet/go-api-c320.git
 cd go-snmp-olt-zte-c320
 
 # Build

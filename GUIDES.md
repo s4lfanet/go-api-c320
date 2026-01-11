@@ -104,7 +104,7 @@ CORS_MAX_AGE=3600
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320.git
+git clone https://github.com/s4lfanet/go-api-c320.git
 cd go-snmp-olt-zte-c320
 ```
 
@@ -493,7 +493,7 @@ For manual deployment without containers:
 **1. Build:**
 ```bash
 # Clone and build
-git clone https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320.git
+git clone https://github.com/s4lfanet/go-api-c320.git
 cd go-snmp-olt-zte-c320
 task app-build
 ```
@@ -673,4 +673,4 @@ export LOG_LEVEL=debug
 For additional help, please refer to:
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development guide
 - [SECURITY.md](SECURITY.md) - Security policy
-- [GitHub Issues](https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/issues)
+- [GitHub Issues](https://github.com/s4lfanet/go-api-c320/issues)

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
+	"github.com/s4lfanet/go-api-c320/internal/model"
 	"github.com/go-redis/redismock/v9"
 )
 

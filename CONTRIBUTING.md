@@ -45,7 +45,7 @@ cd go-snmp-olt-zte-c320
 
 3. Add the upstream repository:
 ```bash
-git remote add upstream https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320.git
+git remote add upstream https://github.com/s4lfanet/go-api-c320.git
 ```
 
 ### Environment Setup

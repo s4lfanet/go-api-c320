@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	apperrors "github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/errors" // Import custom errors
+	apperrors "github.com/s4lfanet/go-api-c320/internal/errors" // Import custom errors
 	"github.com/rs/zerolog/log"                                                       // Import logger
 )
 
