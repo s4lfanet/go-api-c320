@@ -8,10 +8,20 @@ import (
 
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/handler"
 	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/model"
+	"github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/internal/usecase"
 )
 
 // mockOnuUsecase for testing routes
 type mockOnuUsecase struct{}
+
+// mockPonUsecase for testing routes
+type mockPonUsecase struct{}
+
+// mockProfileUsecase for testing routes
+type mockProfileUsecase struct{}
+
+// mockCardUsecase for testing routes
+type mockCardUsecase struct{}
 
 func (m *mockOnuUsecase) GetByBoardIDAndPonID(ctx context.Context, boardID, ponID int) ([]model.ONUInfoPerBoard, error) {
 	return nil, nil
@@ -41,6 +51,33 @@ func (m *mockOnuUsecase) DeleteCache(ctx context.Context, boardID, ponID int) er
 	return nil
 }
 
+// Mock methods for PonUsecase
+func (m *mockPonUsecase) GetPonPortInfo(ctx context.Context, boardID, ponID int) (*model.PonPortInfo, error) {
+	return &model.PonPortInfo{}, nil
+}
+
+// Mock methods for ProfileUsecase
+func (m *mockProfileUsecase) GetAllTrafficProfiles(ctx context.Context) ([]*model.TrafficProfile, error) {
+	return nil, nil
+}
+
+func (m *mockProfileUsecase) GetTrafficProfile(ctx context.Context, profileID int) (*model.TrafficProfile, error) {
+	return &model.TrafficProfile{}, nil
+}
+
+func (m *mockProfileUsecase) GetAllVlanProfiles(ctx context.Context) ([]*model.VlanProfile, error) {
+	return nil, nil
+}
+
+// Mock methods for CardUsecase
+func (m *mockCardUsecase) GetAllCards(ctx context.Context) ([]*model.CardInfo, error) {
+	return nil, nil
+}
+
+func (m *mockCardUsecase) GetCard(ctx context.Context, rack, shelf, slot int) (*model.CardInfo, error) {
+	return &model.CardInfo{}, nil
+}
+
 func TestRootHandler(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -58,10 +95,25 @@ func TestRootHandler(t *testing.T) {
 }
 
 func TestLoadRoutes(t *testing.T) {
-	usecase := &mockOnuUsecase{}
-	onuHandler := handler.NewOnuHandler(usecase)
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
 
-	router := loadRoutes(onuHandler)
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler)
 
 	if router == nil {
 		t.Error("Expected non-nil router")
@@ -69,9 +121,24 @@ func TestLoadRoutes(t *testing.T) {
 }
 
 func TestLoadRoutes_RootEndpoint(t *testing.T) {
-	usecase := &mockOnuUsecase{}
-	onuHandler := handler.NewOnuHandler(usecase)
-	router := loadRoutes(onuHandler)
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -84,9 +151,24 @@ func TestLoadRoutes_RootEndpoint(t *testing.T) {
 }
 
 func TestLoadRoutes_MiddlewareApplied(t *testing.T) {
-	usecase := &mockOnuUsecase{}
-	onuHandler := handler.NewOnuHandler(usecase)
-	router := loadRoutes(onuHandler)
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -106,9 +188,24 @@ func TestLoadRoutes_MiddlewareApplied(t *testing.T) {
 }
 
 func TestLoadRoutes_CORSHeaders(t *testing.T) {
-	usecase := &mockOnuUsecase{}
-	onuHandler := handler.NewOnuHandler(usecase)
-	router := loadRoutes(onuHandler)
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler)
 
 	req := httptest.NewRequest("OPTIONS", "/", nil)
 	req.Header.Set("Origin", "http://localhost:3000")

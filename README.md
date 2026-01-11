@@ -1,11 +1,20 @@
-# Monitoring OLT ZTE C320 with SNMP
-[![ci](https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/actions/workflows/ci.yml/badge.svg)](https://github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320)](https://goreportcard.com/report/github.com/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320)
-[![codecov](https://codecov.io/gh/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320/graph/badge.svg?token=NB3N7GMUX3)](https://codecov.io/gh/Cepat-Kilat-Teknologi/go-snmp-olt-zte-c320)
+# ZTE C320 OLT Management API
+[![Go Report Card](https://goreportcard.com/badge/github.com/s4lfanet/go-api-c320)](https://goreportcard.com/report/github.com/s4lfanet/go-api-c320)
 
-Service for integration into the C320 OLT with the Go programming language
+Production-ready REST API for ZTE C320 OLT monitoring and configuration with SNMP & Telnet integration.
 
-#### 👨‍💻 Full list what has been used:
+## 🚀 Features
+
+### Phase 1-5 Complete ✅
+- **ONU Monitoring** (SNMP) - Real-time status, signal levels, models
+- **ONU Provisioning** (Telnet) - Auto-registration, configuration
+- **VLAN Management** (Telnet) - Service-port creation, VLAN assignment
+- **Traffic Profiles** (Telnet) - DBA profiles, T-CONT, GEM ports
+- **ONU Management** (Telnet) - Reboot, block/unblock, description, delete
+
+### Total: 45+ REST API Endpoints
+
+## 📋 Technology Stack
 * [Go](https://go.dev/) - Programming language
 * [Chi](https://github.com/go-chi/chi/) - HTTP Server
 * [GoSNMP](https://github.com/gosnmp/gosnmp) - SNMP library for Go
@@ -17,37 +26,308 @@ Service for integration into the C320 OLT with the Go programming language
 * [Air](https://github.com/cosmtrek/air) - Live reload for Go apps
 
 
-#### Note : This service is still in development ⚠️👨‍💻👩‍💻
+## 📋 Technology Stack
+* [Go 1.24+](https://go.dev/) - Programming language
+* [Chi Router](https://github.com/go-chi/chi/) - HTTP server & routing
+* [GoSNMP](https://github.com/gosnmp/gosnmp) - SNMP library
+* [Telnet](https://github.com/ziutek/telnet) - Telnet client for OLT configuration
+* [Redis](https://github.com/redis/go-redis/v9) - Caching layer
+* [Zerolog](https://github.com/rs/zerolog) - Structured logging
+* [Docker](https://www.docker.com/) - Containerization
 
-## Getting Started 🚀
+## 🔧 Prerequisites
 
-### 👨‍💻Recommendation for local development most comfortable usage:
+- Go 1.24 or higher
+- Redis 7.2+
+- ZTE C320 OLT with:
+  - SNMP v2c enabled (UDP 161)
+  - Telnet enabled (TCP 23)
+  - Default credentials: `zte/zte` (enable: `zxr10`)
 
-``` shell
-task dev
+## 📦 Installation
+
+### Quick Start (Production)
+
+1. Clone repository:
+```bash
+git clone https://github.com/s4lfanet/go-api-c320.git
+cd go-api-c320
 ```
 
-### Docker development usage:
-```shell
-task up
+2. Set environment variables:
+```bash
+export OLT_IP_ADDRESS=192.168.1.1
+export OLT_SNMP_PORT=161
+export OLT_SNMP_COMMUNITY=public
+export OLT_TELNET_HOST=192.168.1.1
+export OLT_TELNET_PORT=23
+export OLT_TELNET_USERNAME=zte
+export OLT_TELNET_PASSWORD=zte
+export OLT_TELNET_ENABLE_PASSWORD=zxr10
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
 ```
 
-```shell
-docker-compose -f docker-compose.local.yaml up -d && air -c .air.toml
+3. Build and run:
+```bash
+go build -o api cmd/api/main.go
+./api
 ```
 
-### Production usage with internal redis in docker:
-```shell
-task docker-run
+### Docker Deployment
+
+```bash
+docker network create olt-network
+docker run -d --name redis --network olt-network redis:7.2
+docker build -t go-api-c320 .
+docker run -d -p 8081:8081 --name olt-api \
+  --network olt-network \
+  -e REDIS_HOST=redis \
+  -e OLT_IP_ADDRESS=192.168.1.1 \
+  go-api-c320
 ```
-```shell
-docker network create local-dev && \
-docker run -d --name redis-container \
---network local-dev -p 6379:6379 redis:7.2 && \
-docker run -d -p 8081:8081 --name go-snmp-olt-zte-c320 \
---network local-dev -e REDIS_HOST=redis-container \
--e REDIS_PORT=6379 -e REDIS_DB=0 \
--e REDIS_MIN_IDLE_CONNECTIONS=200 -e REDIS_POOL_SIZE=12000 \
+
+## 🌐 API Endpoints
+
+Base URL: `http://localhost:8081/api/v1`
+
+### ONU Monitoring (SNMP)
+- `GET /board/{board_id}/pon/{pon_id}/` - List all ONUs on PON port
+- `GET /board/{board_id}/pon/{pon_id}/onu/{onu_id}` - Get specific ONU
+- `GET /board/{board_id}/pon/{pon_id}/info` - Get PON port info
+- `GET /board/{board_id}/pon/{pon_id}/onu_id/empty` - Get available ONU IDs
+
+### ONU Provisioning (Telnet)
+- `GET /onu/unconfigured` - List unconfigured ONUs
+- `GET /onu/unconfigured/{pon}` - List unconfigured ONUs by PON
+- `POST /onu/register` - Register new ONU
+- `DELETE /onu/{pon}/{onu_id}` - Delete ONU (legacy)
+
+### VLAN Management (Telnet)
+- `GET /vlan/onu/{pon}/{onu_id}` - Get ONU VLAN config
+- `GET /vlan/service-ports` - List all service-ports
+- `POST /vlan/onu` - Configure ONU VLAN
+- `PUT /vlan/onu` - Modify ONU VLAN
+- `DELETE /vlan/onu/{pon}/{onu_id}` - Delete VLAN config
+
+### Traffic Profiles (Telnet)
+- `GET /traffic/dba-profiles` - List DBA profiles
+- `GET /traffic/dba-profile/{name}` - Get DBA profile
+- `POST /traffic/dba-profile` - Create DBA profile
+- `PUT /traffic/dba-profile` - Modify DBA profile
+- `DELETE /traffic/dba-profile/{name}` - Delete DBA profile
+- `GET /traffic/tcont/{pon}/{onu_id}/{tcont_id}` - Get T-CONT
+- `POST /traffic/tcont` - Configure T-CONT
+- `DELETE /traffic/tcont/{pon}/{onu_id}/{tcont_id}` - Delete T-CONT
+- `POST /traffic/gemport` - Configure GEM port
+- `DELETE /traffic/gemport/{pon}/{onu_id}/{gemport_id}` - Delete GEM port
+
+### ONU Management (Telnet)
+- `POST /onu-management/reboot` - Reboot ONU
+- `POST /onu-management/block` - Block/disable ONU
+- `POST /onu-management/unblock` - Unblock/enable ONU
+- `PUT /onu-management/description` - Update ONU description
+- `DELETE /onu-management/{pon}/{onu_id}` - Delete ONU configuration
+
+### System Info (SNMP)
+- `GET /system/cards` - List all cards/slots
+- `GET /system/cards/{rack}/{shelf}/{slot}` - Get card info
+- `GET /profiles/traffic` - List traffic profiles
+- `GET /profiles/traffic/{profile_id}` - Get traffic profile
+- `GET /profiles/vlan` - List VLAN profiles
+
+## 📝 Example Usage
+
+### Register New ONU
+```bash
+curl -X POST http://localhost:8081/api/v1/onu/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 5,
+    "serial_number": "ZTEG1234ABCD",
+    "onu_type": "ZTE-F660",
+    "name": "Customer_001"
+  }'
+```
+
+### Configure VLAN
+```bash
+curl -X POST http://localhost:8081/api/v1/vlan/onu \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 5,
+    "svlan": 100,
+    "cvlan": 200,
+    "vlan_mode": "tag",
+    "priority": 0
+  }'
+```
+
+### Create DBA Profile
+```bash
+curl -X POST http://localhost:8081/api/v1/traffic/dba-profile \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "100M_Profile",
+    "type": 3,
+    "assured_bandwidth": 51200,
+    "max_bandwidth": 102400
+  }'
+```
+
+### Reboot ONU
+```bash
+curl -X POST http://localhost:8081/api/v1/onu-management/reboot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 5
+  }'
+```
+
+## ⚙️ Configuration
+
+All configuration via environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLT_IP_ADDRESS` | - | OLT IP address |
+| `OLT_SNMP_PORT` | 161 | SNMP port |
+| `OLT_SNMP_COMMUNITY` | public | SNMP community string |
+| `OLT_TELNET_HOST` | - | Telnet host (usually same as OLT IP) |
+| `OLT_TELNET_PORT` | 23 | Telnet port |
+| `OLT_TELNET_USERNAME` | zte | Telnet username |
+| `OLT_TELNET_PASSWORD` | zte | Telnet password |
+| `OLT_TELNET_ENABLE_PASSWORD` | zxr10 | Telnet enable password |
+| `REDIS_HOST` | localhost | Redis host |
+| `REDIS_PORT` | 6379 | Redis port |
+| `REDIS_PASSWORD` | - | Redis password (optional) |
+| `REDIS_DB` | 0 | Redis database number |
+| `APP_PORT` | 8081 | API server port |
+| `LOG_LEVEL` | info | Log level (debug/info/warn/error) |
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    HTTP API (Chi Router)                 │
+│                       Port 8081                          │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Handler Layer                         │
+│  ONU │ PON │ Profile │ Provision │ VLAN │ Traffic │ Mgmt│
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Usecase Layer                         │
+│         Business Logic │ Validation │ Orchestration     │
+└─────────────────────────────────────────────────────────┘
+                          │
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+┌────────────────────┐      ┌───────────────────────────┐
+│  SNMP Repository   │      │   Telnet Repository       │
+│  (Read-Only)       │      │   (Read/Write Config)     │
+└────────────────────┘      └───────────────────────────┘
+            │                           │
+            ▼                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                    ZTE C320 OLT                          │
+│              SNMP (UDP 161) │ Telnet (TCP 23)           │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 🧪 Testing
+
+Run tests:
+```bash
+go test ./... -v
+```
+
+Run with coverage:
+```bash
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
+## 📚 Documentation
+
+See `docs/` directory for:
+- [COMMAND_REFERENCE.md](docs/COMMAND_REFERENCE.md) - ZTE C320 Telnet commands
+- [TELNET_CONFIG_ROADMAP.md](docs/TELNET_CONFIG_ROADMAP.md) - Implementation roadmap
+- [PROJECT_STATE.md](docs/PROJECT_STATE.md) - Current project state & progress
+
+## 🔒 Security
+
+- **Never expose Telnet credentials** in code or logs
+- Use environment variables for sensitive data
+- Run API behind reverse proxy (nginx/traefik) in production
+- Enable HTTPS/TLS termination at proxy level
+- Use firewall rules to restrict OLT access
+- Implement rate limiting for API endpoints (built-in)
+
+## 🐛 Known Limitations
+
+- Single Telnet session (sequential command execution)
+- No authentication/authorization on API (add via reverse proxy)
+- SNMP read-only (by design)
+- Telnet timeout: 30 seconds per command
+- No support for SNMP v3 (currently v2c only)
+
+## 🛠️ Development
+
+### Local Development
+```bash
+# Install dependencies
+go mod download
+
+# Run with hot reload
+go install github.com/cosmtrek/air@latest
+air
+
+# Or manual run
+go run cmd/api/main.go
+```
+
+### Build for Production
+```bash
+# Linux
+GOOS=linux GOARCH=amd64 go build -o api cmd/api/main.go
+
+# Windows
+GOOS=windows GOARCH=amd64 go build -o api.exe cmd/api/main.go
+```
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👥 Contributors
+
+- **s4lfanet** - Initial work & development
+
+## 🙏 Acknowledgments
+
+- ZTE for C320 OLT platform
+- Go community for excellent libraries
+- Redis for caching infrastructure
+
+## 📞 Support
+
+For issues and questions:
+- Create issue on [GitHub](https://github.com/s4lfanet/go-api-c320/issues)
+- Email: wardian370@gmail.com
+
+---
+
+**Production Status:** ✅ Ready for deployment (Phase 1-5 complete)
+
+**Last Updated:** January 11, 2026
 -e REDIS_POOL_TIMEOUT=240 -e SNMP_HOST=x.x.x.x \
 -e SNMP_PORT=161 -e SNMP_COMMUNITY=xxxx \
 cepatkilatteknologi/snmp-olt-zte-c320:latest

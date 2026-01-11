@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func loadRoutes(onuHandler *handler.OnuHandler) http.Handler { // Function to configure and return the HTTP router
+func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface) http.Handler { // Function to configure and return the HTTP router
 
 	// Initialize logger
 	l := log.Output(zerolog.ConsoleWriter{ // Create a new logger with console writer output
@@ -51,6 +51,7 @@ func loadRoutes(onuHandler *handler.OnuHandler) http.Handler { // Function to co
 
 			r.Get("/", onuHandler.GetByBoardIDAndPonID)             // GET /board/{board_id}/pon/{pon_id}/ - Fetch ONUs by board and PON
 			r.Delete("/", onuHandler.DeleteCache)                   // DELETE /board/{board_id}/pon/{pon_id}/ - Delete cache for board/pon
+			r.Get("/info", ponHandler.GetPonPortInfo)               // GET .../info - Fetch PON port information
 			r.Get("/onu_id/empty", onuHandler.GetEmptyOnuID)        // GET .../onu_id/empty - Fetch empty ONU IDs
 			r.Get("/onu_id_sn", onuHandler.GetOnuIDAndSerialNumber) // GET .../onu_id_sn - Fetch ONU IDs and serial numbers
 			r.Get("/onu_id/update", onuHandler.UpdateEmptyOnuID)    // GET .../onu_id/update - Update empty ONU IDs (Note: GET used for update seems unusual but following existing code)
@@ -69,6 +70,70 @@ func loadRoutes(onuHandler *handler.OnuHandler) http.Handler { // Function to co
 			r.Use(middleware.ValidateBoardPonParams)                // Apply parameter validation
 			r.Get("/", onuHandler.GetByBoardIDAndPonIDWithPaginate) // GET .../ - Fetch paginated ONU list
 		})
+	})
+
+	// Define routes for /api/v1/profiles
+	apiV1Group.Route("/profiles", func(r chi.Router) { // Create a route group for profiles
+		r.Route("/traffic", func(r chi.Router) { // Nested route group for traffic profiles
+			r.Get("/", profileHandler.GetAllTrafficProfiles)         // GET /profiles/traffic - Fetch all traffic profiles
+			r.Get("/{profile_id}", profileHandler.GetTrafficProfile) // GET /profiles/traffic/{profile_id} - Fetch specific traffic profile
+		})
+		r.Route("/vlan", func(r chi.Router) { // Nested route group for VLAN profiles
+			r.Get("/", profileHandler.GetAllVlanProfiles) // GET /profiles/vlan - Fetch all VLAN profiles
+		})
+	})
+
+	// Define routes for /api/v1/system
+	apiV1Group.Route("/system", func(r chi.Router) { // Create a route group for system information
+		r.Route("/cards", func(r chi.Router) { // Nested route group for card/slot info
+			r.Get("/", cardHandler.GetAllCards)                  // GET /system/cards - Fetch all cards
+			r.Get("/{rack}/{shelf}/{slot}", cardHandler.GetCard) // GET /system/cards/{rack}/{shelf}/{slot} - Fetch specific card
+		})
+	})
+
+	// Define routes for /api/v1/onu (provisioning)
+	apiV1Group.Route("/onu", func(r chi.Router) {
+		r.Get("/unconfigured", provisionHandler.GetUnconfiguredONUs)            // GET all unconfigured ONUs
+		r.Get("/unconfigured/{pon}", provisionHandler.GetUnconfiguredONUsByPON) // GET unconfigured ONUs by PON port
+		r.Post("/register", provisionHandler.RegisterONU)                       // POST register new ONU
+		r.Delete("/{pon}/{onu_id}", provisionHandler.DeleteONU)                 // DELETE ONU
+	})
+
+	// Define routes for /api/v1/vlan (VLAN management)
+	apiV1Group.Route("/vlan", func(r chi.Router) {
+		r.Get("/onu/{pon}/{onu_id}", vlanHandler.GetONUVLAN)    // GET ONU VLAN configuration
+		r.Get("/service-ports", vlanHandler.GetAllServicePorts) // GET all service-port configurations
+		r.Post("/onu", vlanHandler.ConfigureVLAN)               // POST configure ONU VLAN
+		r.Put("/onu", vlanHandler.ModifyVLAN)                   // PUT modify ONU VLAN
+		r.Delete("/onu/{pon}/{onu_id}", vlanHandler.DeleteVLAN) // DELETE ONU VLAN
+	})
+
+	// Define routes for /api/v1/traffic (Traffic profile management)
+	apiV1Group.Route("/traffic", func(r chi.Router) {
+		// DBA Profile routes
+		r.Get("/dba-profiles", trafficHandler.GetAllDBAProfiles)         // GET all DBA profiles
+		r.Get("/dba-profile/{name}", trafficHandler.GetDBAProfile)       // GET specific DBA profile
+		r.Post("/dba-profile", trafficHandler.CreateDBAProfile)          // POST create DBA profile
+		r.Put("/dba-profile", trafficHandler.ModifyDBAProfile)           // PUT modify DBA profile
+		r.Delete("/dba-profile/{name}", trafficHandler.DeleteDBAProfile) // DELETE DBA profile
+
+		// TCONT routes
+		r.Get("/tcont/{pon}/{onu_id}/{tcont_id}", trafficHandler.GetONUTCONT)    // GET T-CONT configuration
+		r.Post("/tcont", trafficHandler.ConfigureTCONT)                          // POST configure T-CONT
+		r.Delete("/tcont/{pon}/{onu_id}/{tcont_id}", trafficHandler.DeleteTCONT) // DELETE T-CONT
+
+		// GEMPort routes
+		r.Post("/gemport", trafficHandler.ConfigureGEMPort)                            // POST configure GEM port
+		r.Delete("/gemport/{pon}/{onu_id}/{gemport_id}", trafficHandler.DeleteGEMPort) // DELETE GEM port
+	})
+
+	// Define routes for /api/v1/onu-management (ONU lifecycle management)
+	apiV1Group.Route("/onu-management", func(r chi.Router) {
+		r.Post("/reboot", onuMgmtHandler.RebootONU)             // POST reboot ONU
+		r.Post("/block", onuMgmtHandler.BlockONU)               // POST block (disable) ONU
+		r.Post("/unblock", onuMgmtHandler.UnblockONU)           // POST unblock (enable) ONU
+		r.Put("/description", onuMgmtHandler.UpdateDescription) // PUT update ONU description
+		r.Delete("/{pon}/{onu_id}", onuMgmtHandler.DeleteONU)   // DELETE ONU configuration
 	})
 
 	// Mount /api/v1/ to root router

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -61,26 +62,53 @@ func ExtractName(oidValue interface{}) string {
 }
 
 // ExtractSerialNumber function is used to extract serial number from OID value
-// Removes "1," prefix if present (common in some ZTE OLTs).
+// Handles GPON ONU serial number format: 4 bytes Vendor ID (ASCII) + 4 bytes Serial (Hex)
+// Example: Hex-STRING "5A 54 45 47 D8 24 CD F3" -> "ZTEGD824CDF3"
 func ExtractSerialNumber(oidValue interface{}) string {
+	var data []byte
+
 	switch v := oidValue.(type) {
 	case string:
-		// If the string starts with "1,", remove it from the string
-		if strings.HasPrefix(v, "1,") {
-			return v[2:]
+		// Remove "1," prefix if exists
+		v = strings.TrimPrefix(v, "1,")
+		// Check if it's already a readable serial number (ASCII printable)
+		if len(v) >= 8 && isASCIIPrintable(v) {
+			return v
 		}
-		return v
+		data = []byte(v)
 	case []byte:
-		// Convert byte slice to string
-		strValue := string(v)
-		if strings.HasPrefix(strValue, "1,") {
-			return strValue[2:] // Remove prefix
-		}
-		return strValue
+		data = v
 	default:
-		// Data type is not recognized
-		return "" // Return empty string
+		return ""
 	}
+
+	// GPON Serial Number format: 4 bytes Vendor ID + 4 bytes Serial Number
+	// Total 8 bytes
+	if len(data) < 8 {
+		// If less than 8 bytes, try to return as string if printable
+		if isASCIIPrintable(string(data)) {
+			return string(data)
+		}
+		return hex.EncodeToString(data)
+	}
+
+	// First 4 bytes are Vendor ID (ASCII characters like "ZTEG", "HWTC")
+	vendorID := string(data[0:4])
+
+	// Last 4 bytes are the serial number (to be converted to uppercase hex)
+	serialHex := strings.ToUpper(hex.EncodeToString(data[4:8]))
+
+	return vendorID + serialHex
+}
+
+// isASCIIPrintable checks if a string contains only printable ASCII characters
+func isASCIIPrintable(s string) bool {
+	for _, c := range s {
+		if c < 32 || c > 126 {
+			return false
+		}
+	}
+	return true
 }
 
 // ConvertAndMultiply function is used to convert the PDU value to string after multiplying by 0.002 and subtracting 30

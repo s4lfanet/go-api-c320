@@ -100,14 +100,32 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	snmpRepo := repository.NewPonRepository(snmpConn.Target, snmpConn.Community, snmpConn.Port) // Create a new PON repository with SNMP details
 	redisRepo := repository.NewOnuRedisRepo(redisClient)                                        // Create new ONU Redis repository
 
+	// Initialize Telnet session manager
+	telnetCfg := config.LoadTelnetConfig()                                // Load telnet configuration
+	telnetSessionManager := repository.GetGlobalSessionManager(telnetCfg) // Get global telnet session manager
+
 	// Initialize usecase
-	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg) // Create new ONU usecase with repositories and config
+	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg)                // Create new ONU usecase with repositories and config
+	ponUsecase := usecase.NewPonUsecase(snmpRepo, redisRepo, cfg)                // Create new PON usecase with repositories and config
+	profileUsecase := usecase.NewProfileUsecase(snmpRepo, redisRepo, cfg)        // Create new Profile usecase with repositories and config
+	cardUsecase := usecase.NewCardUsecase(snmpRepo, redisRepo, cfg)              // Create new Card usecase with repositories and config
+	provisionUsecase := usecase.NewProvisionUsecase(telnetSessionManager, cfg)   // Create new Provision usecase with telnet manager
+	vlanUsecase := usecase.NewVLANUsecase(telnetSessionManager, cfg)             // Create new VLAN usecase with telnet manager
+	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)       // Create new Traffic usecase with telnet manager
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg) // Create new ONU Management usecase with telnet manager
 
 	// Initialize handler
-	onuHandler := handler.NewOnuHandler(onuUsecase) // Create new ONU handler with usecase
+	onuHandler := handler.NewOnuHandler(onuUsecase)                   // Create new ONU handler with usecase
+	ponHandler := handler.NewPonHandler(ponUsecase)                   // Create new PON handler with usecase
+	profileHandler := handler.NewProfileHandler(profileUsecase)       // Create new Profile handler with usecase
+	cardHandler := handler.NewCardHandler(cardUsecase)                // Create new Card handler with usecase
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase) // Create new Provision handler with usecase
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)                // Create new VLAN handler with usecase
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)       // Create new Traffic handler with usecase
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase) // Create new ONU Management handler with usecase
 
 	// Initialize router
-	a.router = loadRoutes(onuHandler) // Load all routes and middleware, assigning to app router
+	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler) // Load all routes and middleware, assigning to app router
 
 	// Start server
 	addr := "8081"          // Define the server address/port
