@@ -1,7 +1,7 @@
 # ZTE C320 V2.1.0 SNMP Monitoring - Project State
 
 **Last Updated:** January 12, 2026  
-**Status:** Phase 1-6.2 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
+**Status:** Phase 1-7.1 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
 
 ## Project Overview
 
@@ -30,7 +30,8 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 ✅ Phase 4 (Traffic Profile Management) - Deployed & Tested  
 ✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested  
 ✅ Phase 6.1 (Batch Operations) - Deployed & Tested  
-✅ Phase 6.2 (Config Backup/Restore) - Deployed & Tested
+✅ Phase 6.2 (Config Backup/Restore) - Deployed & Tested  
+✅ Phase 7.1 (Real-time ONU Monitoring) - Deployed & Tested
 
 **Endpoint Tests:**
 - All 4 provisioning endpoints working
@@ -43,8 +44,8 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 - Session management operational
 
 **Total Configuration Endpoints:** 38 (Phases 2-6.2)  
-**Total Monitoring Endpoints:** 40+ (SNMP)  
-**Total Endpoints:** 78+
+**Total Monitoring Endpoints:** 43+ (SNMP)  
+**Total Endpoints:** 81+
 
 ## Critical OID Information
 
@@ -2360,13 +2361,58 @@ BACKUP_DIR=/opt/go-snmp-olt/backups  # Backup storage directory
 - Binary: `/opt/go-snmp-olt/bin/api`
 - Backup Directory: `/opt/go-snmp-olt/backups` (created with proper permissions)
 
-### Next Steps (Phase 7 - Advanced Monitoring - Planned)
-- Configuration backup/restore
-- Batch configuration operations
-- Configuration templates
-- Audit logging for all operations
-- Rollback support for critical changes
-- Webhook notifications for events
+### Phase 7.1 - Real-time ONU Monitoring ✅
+
+**Completed:** January 12, 2026
+
+**Implementation:**
+- **NEW Endpoints (3):**
+  - `GET /api/v1/monitoring/onu/{pon}/{onuId}` - Single ONU monitoring
+  - `GET /api/v1/monitoring/pon/{pon}` - PON port aggregated monitoring
+  - `GET /api/v1/monitoring/olt` - Overall OLT summary
+
+**Features:**
+- Real-time ONU status monitoring (online/offline)
+- Traffic statistics (RX packets, RX bytes)
+- Device information (serial number, model, firmware)
+- PON port aggregation (all ONUs on port)
+- OLT-wide summary (all PONs and ONUs)
+- Human-readable bandwidth formatting
+
+**V2.1.0 Limitations:**
+- ❌ **NO Optical Power Monitoring** (RX/TX power not available in V2.1.0 SNMP)
+- ✅ Online status available
+- ✅ Traffic counters available
+- ✅ Device info available
+
+**OIDs Used (V2.1.0):**
+- ONU Serial: `.1012.3.13.3.1.5.{pon_index}.{onu_id}`
+- ONU Model: `.1012.3.13.3.1.10.{pon_index}.{onu_id}`
+- ONU Firmware: `.1012.3.13.3.1.11.{pon_index}.{onu_id}`
+- ONU Status: `.1012.3.31.4.1.100.{pon_index}.{onu_id}` (1=online, 0=offline)
+- ONU RX Packets: `.1012.3.31.4.1.3.{pon_index}.{onu_id}`
+- ONU RX Bytes: `.1012.3.31.4.1.6.{pon_index}.{onu_id}`
+- PON RX Packets: `.1012.3.31.5.1.3.{pon_index}.1`
+- PON RX Bytes: `.1012.3.31.5.1.6.{pon_index}.1`
+
+**Files Added:**
+- `internal/model/monitoring.go` - Monitoring data models
+- `internal/usecase/monitoring.go` - Monitoring business logic
+- `internal/handler/monitoring.go` - HTTP handlers
+- `internal/repository/onu_repository.go` - ONU data retrieval
+
+**Files Modified:**
+- `app/app.go` - Added monitoring initialization
+- `app/routes.go` - Added monitoring routes
+- `internal/utils/converter.go` - Added utility functions (FormatBytesRate, ParseOID, Extract helpers)
+
+### Next Steps (Phase 7.2+ - Future Enhancements)
+- Optical power monitoring (requires V2.2+ firmware upgrade)
+- Historical monitoring data storage
+- Alerting and notifications
+- Performance trend analysis
+- Dashboard integration
+- SNMP traps handling
 
 ---
 
@@ -2392,7 +2438,8 @@ go-snmp-olt-zte-c320/
 │   │   ├── pon.go                   # PON port models
 │   │   ├── profile.go               # Traffic & VLAN profile models
 │   │   ├── card.go                  # Card/slot models
-│   │   └── telnet.go                # NEW - All telnet models (Phase 1, UPDATED Phase 2-5)
+│   │   ├── telnet.go                # NEW - All telnet models (Phase 1, UPDATED Phase 2-5)
+│   │   └── monitoring.go            # NEW - Monitoring models (Phase 7.1)
 │   ├── usecase/
 │   │   ├── onu.go
 │   │   ├── pon.go
@@ -2401,7 +2448,8 @@ go-snmp-olt-zte-c320/
 │   │   ├── provision.go             # NEW - ONU provisioning logic (Phase 2)
 │   │   ├── vlan.go                  # NEW - VLAN management logic (Phase 3)
 │   │   ├── traffic.go               # NEW - Traffic profile logic (Phase 4)
-│   │   └── onu_management.go        # NEW - ONU lifecycle logic (Phase 5)
+│   │   ├── onu_management.go        # NEW - ONU lifecycle logic (Phase 5)
+│   │   └── monitoring.go            # NEW - Monitoring logic (Phase 7.1)
 │   ├── handler/
 │   │   ├── onu.go
 │   │   ├── pon.go
@@ -2410,7 +2458,8 @@ go-snmp-olt-zte-c320/
 │   │   ├── provision.go             # NEW - Provisioning HTTP handlers (Phase 2)
 │   │   ├── vlan.go                  # NEW - VLAN HTTP handlers (Phase 3)
 │   │   ├── traffic.go               # NEW - Traffic HTTP handlers (Phase 4)
-│   │   └── onu_management.go        # NEW - ONU management HTTP handlers (Phase 5)
+│   │   ├── onu_management.go        # NEW - ONU management HTTP handlers (Phase 5)
+│   │   └── monitoring.go            # NEW - Monitoring HTTP handlers (Phase 7.1)
 │   ├── repository/
 │   │   ├── snmp.go
 │   │   ├── redis.go
@@ -2418,7 +2467,8 @@ go-snmp-olt-zte-c320/
 │   │   ├── telnet_session.go        # NEW - Session pooling (Phase 1)
 │   │   ├── telnet_vlan.go           # NEW - VLAN operations (Phase 3)
 │   │   ├── telnet_traffic.go        # NEW - Traffic profile operations (Phase 4)
-│   │   └── telnet_onu_mgmt.go       # NEW - ONU lifecycle operations (Phase 5)
+│   │   ├── telnet_onu_mgmt.go       # NEW - ONU lifecycle operations (Phase 5)
+│   │   └── onu_repository.go        # NEW - ONU data operations (Phase 7.1)
 │   ├── middleware/
 │   ├── utils/
 │   └── errors/
