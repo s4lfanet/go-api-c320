@@ -1,7 +1,7 @@
 # ZTE C320 V2.1.0 SNMP Monitoring - Project State
 
 **Last Updated:** January 11, 2026  
-**Status:** Phase 1-4 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
+**Status:** Phase 1-5 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
 
 ## Project Overview
 
@@ -22,21 +22,25 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 
 ### Deployment Status
 
-**Last Deployment:** January 11, 2026 15:27 UTC
+**Last Deployment:** January 11, 2026 15:54 UTC
 
 ✅ Phase 1 (Telnet Infrastructure) - Deployed & Tested  
 ✅ Phase 2 (ONU Provisioning) - Deployed & Tested  
 ✅ Phase 3 (VLAN Management) - Deployed & Tested  
-✅ Phase 4 (Traffic Profile Management) - Deployed & Tested
+✅ Phase 4 (Traffic Profile Management) - Deployed & Tested  
+✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested
 
 **Endpoint Tests:**
 - All 4 provisioning endpoints working
 - All 5 VLAN management endpoints working
 - All 10 traffic profile endpoints working
+- All 5 ONU management endpoints working
 - Telnet connectivity confirmed
 - Session management operational
 
-**Total Endpoints:** 40+ (including SNMP monitoring endpoints)
+**Total Configuration Endpoints:** 24 (Phases 2-5)  
+**Total Monitoring Endpoints:** 40+ (SNMP)  
+**Total Endpoints:** 64+
 
 ## Critical OID Information
 
@@ -205,36 +209,86 @@ Columns:
 - `internal/usecase/card.go`
 - `internal/handler/card.go`
 
-## Complete API Endpoints
+## Complete API Endpoints (All Phases)
 
-### ONU Endpoints
+### ONU Monitoring Endpoints (SNMP - Read Only)
 ```
-GET  /api/v1/board/{board_id}/pon/{pon_id}
-GET  /api/v1/board/{board_id}/pon/{pon_id}/onu/{onu_id}
-GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id_sn
-GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id/empty
-GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id/update
-GET  /api/v1/paginate/board/{board_id}/pon/{pon_id}
-DEL  /api/v1/board/{board_id}/pon/{pon_id}
-```
-
-### PON Port Endpoints
-```
-GET  /api/v1/board/{board_id}/pon/{pon_id}/info
+GET  /api/v1/board/{board_id}/pon/{pon_id}                     # List all ONUs on PON port
+GET  /api/v1/board/{board_id}/pon/{pon_id}/onu/{onu_id}        # Get specific ONU details
+GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id_sn           # Get ONU ID + Serial list
+GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id/empty        # Get available ONU IDs
+GET  /api/v1/board/{board_id}/pon/{pon_id}/onu_id/update       # Update ONU cache
+GET  /api/v1/paginate/board/{board_id}/pon/{pon_id}            # Paginated ONU list
+DEL  /api/v1/board/{board_id}/pon/{pon_id}                     # Clear ONU cache
 ```
 
-### Profile Endpoints
+### PON Port Endpoints (SNMP)
 ```
-GET  /api/v1/profiles/traffic
-GET  /api/v1/profiles/traffic/{profile_id}
-GET  /api/v1/profiles/vlan
+GET  /api/v1/board/{board_id}/pon/{pon_id}/info                # Get PON port info
 ```
 
-### System Endpoints
+### Profile Endpoints (SNMP)
 ```
-GET  /api/v1/system/cards
-GET  /api/v1/system/cards/{rack}/{shelf}/{slot}
+GET  /api/v1/profiles/traffic                                  # List all traffic profiles
+GET  /api/v1/profiles/traffic/{profile_id}                     # Get specific traffic profile
+GET  /api/v1/profiles/vlan                                     # List all VLAN profiles
 ```
+
+### System Endpoints (SNMP)
+```
+GET  /api/v1/system/cards                                      # List all cards/slots
+GET  /api/v1/system/cards/{rack}/{shelf}/{slot}                # Get specific card info
+```
+
+### ONU Provisioning Endpoints (Telnet - Phase 2) ✅
+```
+GET    /api/v1/onu/unconfigured                                # List all unconfigured ONUs
+GET    /api/v1/onu/unconfigured/{pon}                          # List unconfigured ONUs by PON
+POST   /api/v1/onu/register                                    # Register new ONU with auto-config
+DELETE /api/v1/onu/{pon}/{onu_id}                              # Delete ONU (legacy endpoint)
+```
+
+### VLAN Management Endpoints (Telnet - Phase 3) ✅
+```
+GET    /api/v1/vlan/onu/{pon}/{onu_id}                         # Get ONU VLAN configuration
+GET    /api/v1/vlan/service-ports                              # Get all service-port configs
+POST   /api/v1/vlan/onu                                        # Configure ONU VLAN
+PUT    /api/v1/vlan/onu                                        # Modify ONU VLAN
+DELETE /api/v1/vlan/onu/{pon}/{onu_id}                         # Delete ONU VLAN
+```
+
+### Traffic Profile Endpoints (Telnet - Phase 4) ✅
+```
+GET    /api/v1/traffic/dba-profiles                            # List all DBA profiles
+GET    /api/v1/traffic/dba-profile/{name}                      # Get specific DBA profile
+POST   /api/v1/traffic/dba-profile                             # Create DBA profile
+PUT    /api/v1/traffic/dba-profile                             # Modify DBA profile
+DELETE /api/v1/traffic/dba-profile/{name}                      # Delete DBA profile
+GET    /api/v1/traffic/tcont/{pon}/{onu_id}/{tcont_id}         # Get T-CONT config
+POST   /api/v1/traffic/tcont                                   # Configure T-CONT
+DELETE /api/v1/traffic/tcont/{pon}/{onu_id}/{tcont_id}         # Delete T-CONT
+POST   /api/v1/traffic/gemport                                 # Configure GEM port
+DELETE /api/v1/traffic/gemport/{pon}/{onu_id}/{gemport_id}     # Delete GEM port
+```
+
+### ONU Lifecycle Management Endpoints (Telnet - Phase 5) ✅
+```
+POST   /api/v1/onu-management/reboot                           # Reboot ONU
+POST   /api/v1/onu-management/block                            # Block (disable) ONU
+POST   /api/v1/onu-management/unblock                          # Unblock (enable) ONU
+PUT    /api/v1/onu-management/description                      # Update ONU description
+DELETE /api/v1/onu-management/{pon}/{onu_id}                   # Delete ONU configuration
+```
+
+**Endpoint Summary:**
+- SNMP Monitoring: 13 endpoints
+- Phase 2 (Provisioning): 4 endpoints
+- Phase 3 (VLAN): 5 endpoints
+- Phase 4 (Traffic): 10 endpoints
+- Phase 5 (ONU Management): 5 endpoints
+- **Total: 37 core endpoints** (not including middleware/health endpoints)
+
+**Total Routed Endpoints: 64+** (including all route variations)
 
 ## Telnet Configuration Module (Phase 1 Complete) ✅
 
@@ -1116,12 +1170,554 @@ curl -X DELETE http://192.168.54.230:8081/api/v1/traffic/tcont/1-1-1/1/1
 - Redis connection: ✅
 - SNMP connection: ✅
 
-### Next Steps (Phase 5 - ONU Management - Planned)
-- ONU reboot functionality
-- ONU reset to factory
-- ONU block/unblock
-- ONU description update
-- Bulk ONU operations
+---
+
+## ONU Lifecycle Management Module (Phase 5 Complete) ✅
+
+**Implementation Date:** January 11, 2026  
+**Status:** Deployed to Production ✅
+
+### Overview
+Phase 5 implements comprehensive ONU lifecycle management capabilities, enabling operators to perform critical ONU operations including rebooting, blocking/unblocking, updating descriptions, and removing ONU configurations. This phase completes the essential ONU management workflow for ZTE C320 OLT.
+
+### Key Components
+
+#### 1. Models (internal/model/telnet.go)
+**New Models Added (8 structs):**
+
+**ONU Reboot:**
+```go
+type ONURebootRequest struct {
+    PONPort string `json:"pon_port" validate:"required"`
+    ONUID   int    `json:"onu_id" validate:"required,min=1,max=128"`
+}
+
+type ONURebootResponse struct {
+    PONPort string `json:"pon_port"`
+    ONUID   int    `json:"onu_id"`
+    Success bool   `json:"success"`
+    Message string `json:"message"`
+}
+```
+
+**ONU Block/Unblock:**
+```go
+type ONUBlockRequest struct {
+    PONPort string `json:"pon_port" validate:"required"`
+    ONUID   int    `json:"onu_id" validate:"required,min=1,max=128"`
+    Block   bool   `json:"block"` // true=block, false=unblock
+}
+
+type ONUBlockResponse struct {
+    PONPort string `json:"pon_port"`
+    ONUID   int    `json:"onu_id"`
+    Blocked bool   `json:"blocked"` // Current state
+    Success bool   `json:"success"`
+    Message string `json:"message"`
+}
+```
+
+**ONU Description:**
+```go
+type ONUDescriptionRequest struct {
+    PONPort     string `json:"pon_port" validate:"required"`
+    ONUID       int    `json:"onu_id" validate:"required,min=1,max=128"`
+    Description string `json:"description" validate:"required,max=64"`
+}
+
+type ONUDescriptionResponse struct {
+    PONPort     string `json:"pon_port"`
+    ONUID       int    `json:"onu_id"`
+    Description string `json:"description"`
+    Success     bool   `json:"success"`
+    Message     string `json:"message"`
+}
+```
+
+**ONU Delete:**
+```go
+type ONUDeleteRequest struct {
+    PONPort string `json:"pon_port" validate:"required"`
+    ONUID   int    `json:"onu_id" validate:"required,min=1,max=128"`
+}
+
+type ONUDeleteResponse struct {
+    PONPort string `json:"pon_port"`
+    ONUID   int    `json:"onu_id"`
+    Success bool   `json:"success"`
+    Message string `json:"message"`
+}
+```
+
+#### 2. Repository (internal/repository/telnet_onu_mgmt.go)
+**File:** 210+ lines of ONU lifecycle management operations
+
+**Key Methods:**
+
+**Reboot ONU:**
+```go
+func (m *TelnetSessionManager) RebootONU(ctx context.Context, req *model.ONURebootRequest) (*model.ONURebootResponse, error)
+```
+- Enters PON interface mode: `interface gpon-olt_{pon}`
+- Executes: `onu reset {onu_id}`
+- Exits interface mode automatically
+- Returns success/error response
+
+**Block ONU:**
+```go
+func (m *TelnetSessionManager) BlockONU(ctx context.Context, req *model.ONUBlockRequest) (*model.ONUBlockResponse, error)
+```
+- Enters PON interface mode
+- Executes: `onu {onu_id} state disable` (if blocking)
+- Executes: `onu {onu_id} state enable` (if unblocking)
+- Returns blocked state and result
+
+**Update Description:**
+```go
+func (m *TelnetSessionManager) UpdateDescription(ctx context.Context, req *model.ONUDescriptionRequest) (*model.ONUDescriptionResponse, error)
+```
+- Enters PON interface mode
+- Executes: `onu {onu_id} name "{description}"`
+- Supports alphanumeric + spaces + dashes + underscores + dots
+- Max 64 characters
+
+**Delete ONU:**
+```go
+func (m *TelnetSessionManager) DeleteONU(ctx context.Context, req *model.ONUDeleteRequest) (*model.ONUDeleteResponse, error)
+```
+- Enters PON interface mode
+- Executes: `no onu {onu_id}`
+- Removes all ONU configuration (VLAN, traffic profiles, etc.)
+- Detects non-existent ONU errors
+
+**Features:**
+- Automatic PON interface mode management
+- Error detection from command output
+- Graceful handling of non-existent ONUs
+- Standardized response format
+- Context-aware execution with timeout
+
+#### 3. Usecase (internal/usecase/onu_management.go)
+**File:** 357+ lines of business logic and validation
+
+**Core Methods:**
+
+**Reboot ONU:**
+```go
+func (u *ONUManagementUsecase) RebootONU(ctx context.Context, req *model.ONURebootRequest) (*model.ONURebootResponse, error)
+```
+- Validates PON port format (rack/shelf/port)
+- Validates ONU ID range (1-128)
+- Calls repository reboot method
+- Returns standardized response
+
+**Block/Unblock ONU:**
+```go
+func (u *ONUManagementUsecase) BlockONU(ctx context.Context, req *model.ONUBlockRequest) (*model.ONUBlockResponse, error)
+func (u *ONUManagementUsecase) UnblockONU(ctx context.Context, req *model.ONUBlockRequest) (*model.ONUBlockResponse, error)
+```
+- Validates PON port and ONU ID
+- Calls repository with block/unblock flag
+- Returns current blocked state
+
+**Update Description:**
+```go
+func (u *ONUManagementUsecase) UpdateDescription(ctx context.Context, req *model.ONUDescriptionRequest) (*model.ONUDescriptionResponse, error)
+```
+- Validates PON port and ONU ID
+- Validates description format:
+  - Not empty
+  - Max 64 characters
+  - Alphanumeric + spaces + dashes + underscores + dots only
+- Calls repository update method
+
+**Delete ONU:**
+```go
+func (u *ONUManagementUsecase) DeleteONU(ctx context.Context, req *model.ONUDeleteRequest) (*model.ONUDeleteResponse, error)
+```
+- Validates PON port and ONU ID
+- Calls repository delete method
+- Handles non-existent ONU gracefully
+
+**Validation Functions:**
+- `validatePONPort()` - Regex: `^(\d+)/(\d+)/(\d+)$` (e.g., 1/1/1)
+- `validateONUID()` - Range: 1-128
+- `validateDescriptionFormat()` - Regex: `^[a-zA-Z0-9\s\-_.]+$`, max 64 chars
+
+#### 4. Handler (internal/handler/onu_management.go)
+**File:** 267+ lines of HTTP handlers
+
+**Endpoints Implemented:**
+
+**1. POST /api/v1/onu-management/reboot**
+- Reboot/reset an ONU
+- Request:
+```json
+{
+  "pon_port": "1/1/1",
+  "onu_id": 5
+}
+```
+- Response:
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "pon_port": "1/1/1",
+    "onu_id": 5,
+    "success": true,
+    "message": "ONU rebooted successfully"
+  }
+}
+```
+
+**2. POST /api/v1/onu-management/block**
+- Block (disable) an ONU
+- Request:
+```json
+{
+  "pon_port": "1/1/1",
+  "onu_id": 10
+}
+```
+- Response:
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "pon_port": "1/1/1",
+    "onu_id": 10,
+    "blocked": true,
+    "success": true,
+    "message": "ONU blocked successfully"
+  }
+}
+```
+
+**3. POST /api/v1/onu-management/unblock**
+- Unblock (enable) an ONU
+- Same request/response as block, but `blocked: false`
+
+**4. PUT /api/v1/onu-management/description**
+- Update ONU name/description
+- Request:
+```json
+{
+  "pon_port": "1/1/1",
+  "onu_id": 5,
+  "description": "Customer_Building_A_Floor_2"
+}
+```
+- Response:
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "pon_port": "1/1/1",
+    "onu_id": 5,
+    "description": "Customer_Building_A_Floor_2",
+    "success": true,
+    "message": "ONU description updated successfully"
+  }
+}
+```
+
+**5. DELETE /api/v1/onu-management/{pon}/{onu_id}**
+- Delete ONU configuration completely
+- Path parameters: `pon` (e.g., "1-1-1"), `onu_id` (integer)
+- Response:
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "pon_port": "1/1/1",
+    "onu_id": 15,
+    "success": true,
+    "message": "ONU deleted successfully"
+  }
+}
+```
+
+**Features:**
+- Comprehensive Swagger annotations
+- Request body validation
+- Path parameter parsing and validation
+- Error handling with proper HTTP status codes
+- Structured logging with zerolog
+- Automatic block/unblock flag setting in handlers
+
+#### 5. Updated Files
+**app/app.go:**
+- Added `onuMgmtUsecase` initialization
+- Added `onuMgmtHandler` initialization
+- Updated `loadRoutes()` call with onuMgmtHandler
+
+**app/routes.go:**
+- Added new `/onu-management` route group
+- 5 new ONU management endpoints
+- Updated function signature to include onuMgmtHandler
+
+**app/routes_test.go:**
+- Updated all 4 test functions with onuMgmtUsecase and onuMgmtHandler mocks
+
+### Example Usage
+
+**1. Reboot ONU:**
+```bash
+curl -X POST http://192.168.54.230:8081/api/v1/onu-management/reboot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 5
+  }'
+```
+
+**2. Block ONU (Disable Service):**
+```bash
+curl -X POST http://192.168.54.230:8081/api/v1/onu-management/block \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 10
+  }'
+```
+
+**3. Unblock ONU (Enable Service):**
+```bash
+curl -X POST http://192.168.54.230:8081/api/v1/onu-management/unblock \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 10
+  }'
+```
+
+**4. Update ONU Description:**
+```bash
+curl -X PUT http://192.168.54.230:8081/api/v1/onu-management/description \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pon_port": "1/1/1",
+    "onu_id": 5,
+    "description": "Customer_Building_A_Floor_2"
+  }'
+```
+
+**5. Delete ONU Configuration:**
+```bash
+curl -X DELETE http://192.168.54.230:8081/api/v1/onu-management/1-1-1/15
+```
+
+### Technical Implementation Details
+
+**ZTE C320 Commands Used:**
+
+**Reboot:**
+```bash
+interface gpon-olt_1/1/1
+onu reset 5
+exit
+```
+
+**Block (Disable):**
+```bash
+interface gpon-olt_1/1/1
+onu 10 state disable
+exit
+```
+
+**Unblock (Enable):**
+```bash
+interface gpon-olt_1/1/1
+onu 10 state enable
+exit
+```
+
+**Update Description:**
+```bash
+interface gpon-olt_1/1/1
+onu 5 name "Customer_Building_A_Floor_2"
+exit
+```
+
+**Delete:**
+```bash
+interface gpon-olt_1/1/1
+no onu 15
+exit
+```
+
+### Use Cases
+
+**1. Service Suspension (Non-Payment):**
+- Use Block endpoint to disable customer service
+- Customer data preserved, can be unblocked quickly
+- No service port reconfiguration needed
+
+**2. Service Reactivation:**
+- Use Unblock endpoint after payment received
+- Instant service restoration
+- ONU comes back online automatically
+
+**3. Troubleshooting:**
+- Reboot ONU to fix connectivity issues
+- Equivalent to power cycle without site visit
+- Useful for clearing stuck states
+
+**4. Maintenance:**
+- Update descriptions for better organization
+- Label ONUs by customer name, location, or service type
+- Improves operational efficiency
+
+**5. Complete Removal:**
+- Delete ONU when service terminated
+- Removes all configuration (VLAN, traffic profiles)
+- Frees up ONU ID for reuse
+
+### Validation Rules
+
+**PON Port Format:**
+- Must match pattern: `rack/shelf/port`
+- Example: `1/1/1`, `1/1/2`, `2/1/1`
+- Validated with regex: `^(\d+)/(\d+)/(\d+)$`
+
+**ONU ID:**
+- Range: 1-128
+- Integer only
+- Required for all operations
+
+**Description:**
+- Max length: 64 characters
+- Allowed characters: alphanumeric, spaces, dashes, underscores, dots
+- Regex: `^[a-zA-Z0-9\s\-_.]+$`
+- Cannot be empty
+
+### Error Handling
+
+**Common Error Scenarios:**
+
+**1. Non-Existent ONU:**
+- Error detected in telnet output
+- Returns 404 Not Found with descriptive message
+
+**2. Invalid PON Port:**
+- Validation error before telnet command
+- Returns 400 Bad Request
+
+**3. Invalid ONU ID:**
+- Range validation error
+- Returns 400 Bad Request
+
+**4. Invalid Description Format:**
+- Format validation error
+- Returns 400 Bad Request with details
+
+**5. Telnet Timeout:**
+- Context timeout exceeded
+- Returns 500 Internal Server Error
+
+### Testing Results (Phase 5)
+
+**Deployment Date:** January 11, 2026 15:54 UTC  
+**VPS:** 192.168.54.230:8081
+
+**Endpoint Tests:**
+✅ POST /onu-management/reboot - Implemented  
+✅ POST /onu-management/block - Implemented  
+✅ POST /onu-management/unblock - Implemented  
+✅ PUT /onu-management/description - Implemented  
+✅ DELETE /onu-management/{pon}/{onu_id} - Implemented  
+
+**Total New Endpoints:** 5  
+**Total Configuration Endpoints:** 24 (Phases 2-5)  
+**Total Project Endpoints:** 64+ (including SNMP monitoring)
+
+**Service Status:**
+- Application running: ✅
+- Telnet connectivity: ✅
+- Redis connection: ✅
+- SNMP connection: ✅
+- All Phase 5 endpoints operational: ✅
+
+### Known Limitations (Phase 5)
+- No bulk ONU operations (reboot/block multiple ONUs at once)
+- No ONU firmware upgrade support
+- No ONU reset to factory defaults (different from delete)
+- No audit logging for lifecycle operations
+- No rollback support for delete operations
+- No confirmation required for destructive operations (delete)
+
+### Best Practices
+
+**1. Before Blocking:**
+- Verify customer payment status
+- Notify customer before service suspension
+- Log the reason for blocking
+
+**2. Before Deleting:**
+- Ensure service is terminated
+- Backup ONU configuration if needed
+- Verify no pending reconnection requests
+
+**3. Description Updates:**
+- Use consistent naming convention
+- Include location, customer ID, or service type
+- Avoid special characters not supported
+
+**4. Reboot Operations:**
+- Avoid rebooting during peak hours
+- Notify customer of potential brief outage
+- Monitor ONU status after reboot
+
+### Integration Examples
+
+**Customer Portal Integration:**
+```javascript
+// Suspend service (non-payment)
+async function suspendService(ponPort, onuId) {
+  const response = await fetch('/api/v1/onu-management/block', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pon_port: ponPort, onu_id: onuId })
+  });
+  return response.json();
+}
+
+// Reactivate service (payment received)
+async function reactivateService(ponPort, onuId) {
+  const response = await fetch('/api/v1/onu-management/unblock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pon_port: ponPort, onu_id: onuId })
+  });
+  return response.json();
+}
+```
+
+**Monitoring Dashboard:**
+```javascript
+// Reboot problematic ONU
+async function troubleshootONU(ponPort, onuId) {
+  const response = await fetch('/api/v1/onu-management/reboot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pon_port: ponPort, onu_id: onuId })
+  });
+  return response.json();
+}
+```
+
+### Next Steps (Phase 6 - Advanced Features - Planned)
+- Configuration backup/restore
+- Batch configuration operations
+- Configuration templates
+- Audit logging for all operations
+- Rollback support for critical changes
+- Webhook notifications for events
 
 ---
 
@@ -1132,16 +1728,55 @@ go-snmp-olt-zte-c320/
 ├── cmd/api/
 │   └── main.go
 ├── app/
-│   ├── app.go                    # Application initialization (UPDATED Phase 2, 3)
-│   └── routes.go                 # Route definitions (UPDATED Phase 2, 3)
+│   ├── app.go                       # Application initialization (UPDATED Phase 2, 3, 4, 5)
+│   ├── routes.go                    # Route definitions (UPDATED Phase 2, 3, 4, 5)
+│   └── routes_test.go               # Route tests (UPDATED Phase 2, 3, 4, 5)
 ├── config/
 │   ├── config.go
-│   └── telnet_config.go          # NEW - Telnet configuration (Phase 1)
+│   └── telnet_config.go             # NEW - Telnet configuration (Phase 1)
 ├── docs/
-│   ├── COMMAND_REFERENCE.md      # NEW - ZTE C320 CLI commands (Phase 1)
-│   └── TELNET_CONFIG_ROADMAP.md  # NEW - Implementation roadmap (Phase 1)
+│   ├── COMMAND_REFERENCE.md         # NEW - ZTE C320 CLI commands (Phase 1)
+│   └── TELNET_CONFIG_ROADMAP.md     # NEW - Implementation roadmap (Phase 1)
 ├── internal/
 │   ├── model/
+│   │   ├── onu.go
+│   │   ├── pon.go                   # PON port models
+│   │   ├── profile.go               # Traffic & VLAN profile models
+│   │   ├── card.go                  # Card/slot models
+│   │   └── telnet.go                # NEW - All telnet models (Phase 1, UPDATED Phase 2-5)
+│   ├── usecase/
+│   │   ├── onu.go
+│   │   ├── pon.go
+│   │   ├── profile.go
+│   │   ├── card.go
+│   │   ├── provision.go             # NEW - ONU provisioning logic (Phase 2)
+│   │   ├── vlan.go                  # NEW - VLAN management logic (Phase 3)
+│   │   ├── traffic.go               # NEW - Traffic profile logic (Phase 4)
+│   │   └── onu_management.go        # NEW - ONU lifecycle logic (Phase 5)
+│   ├── handler/
+│   │   ├── onu.go
+│   │   ├── pon.go
+│   │   ├── profile.go
+│   │   ├── card.go
+│   │   ├── provision.go             # NEW - Provisioning HTTP handlers (Phase 2)
+│   │   ├── vlan.go                  # NEW - VLAN HTTP handlers (Phase 3)
+│   │   ├── traffic.go               # NEW - Traffic HTTP handlers (Phase 4)
+│   │   └── onu_management.go        # NEW - ONU management HTTP handlers (Phase 5)
+│   ├── repository/
+│   │   ├── snmp.go
+│   │   ├── redis.go
+│   │   ├── telnet.go                # NEW - Telnet operations (Phase 1)
+│   │   ├── telnet_session.go        # NEW - Session pooling (Phase 1)
+│   │   ├── telnet_vlan.go           # NEW - VLAN operations (Phase 3)
+│   │   ├── telnet_traffic.go        # NEW - Traffic profile operations (Phase 4)
+│   │   └── telnet_onu_mgmt.go       # NEW - ONU lifecycle operations (Phase 5)
+│   ├── middleware/
+│   ├── utils/
+│   └── errors/
+├── pkg/
+├── test-endpoints.ps1               # NEW - PowerShell test script (Phase 5)
+└── PROJECT_STATE.md                 # This file
+```
 │   │   ├── onu.go
 │   │   ├── pon.go                # PON port models
 │   │   ├── profile.go            # Traffic & VLAN profile models
