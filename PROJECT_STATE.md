@@ -1,7 +1,7 @@
 # ZTE C320 V2.1.0 SNMP Monitoring - Project State
 
-**Last Updated:** January 11, 2026  
-**Status:** Phase 1-6.1 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
+**Last Updated:** January 12, 2026  
+**Status:** Phase 1-6.2 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
 
 ## Project Overview
 
@@ -22,14 +22,15 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 
 ### Deployment Status
 
-**Last Deployment:** January 11, 2026 16:51 UTC
+**Last Deployment:** January 12, 2026 19:27 UTC
 
 ✅ Phase 1 (Telnet Infrastructure) - Deployed & Tested  
 ✅ Phase 2 (ONU Provisioning) - Deployed & Tested  
 ✅ Phase 3 (VLAN Management) - Deployed & Tested  
 ✅ Phase 4 (Traffic Profile Management) - Deployed & Tested  
 ✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested  
-✅ Phase 6.1 (Batch Operations) - Deployed & Tested
+✅ Phase 6.1 (Batch Operations) - Deployed & Tested  
+✅ Phase 6.2 (Config Backup/Restore) - Deployed & Tested
 
 **Endpoint Tests:**
 - All 4 provisioning endpoints working
@@ -37,12 +38,13 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 - All 10 traffic profile endpoints working
 - All 5 ONU management endpoints working
 - All 5 batch operation endpoints working
+- All 9 config backup/restore endpoints working
 - Telnet connectivity confirmed
 - Session management operational
 
-**Total Configuration Endpoints:** 29 (Phases 2-6.1)  
+**Total Configuration Endpoints:** 38 (Phases 2-6.2)  
 **Total Monitoring Endpoints:** 40+ (SNMP)  
-**Total Endpoints:** 69+
+**Total Endpoints:** 78+
 
 ## Critical OID Information
 
@@ -2257,7 +2259,108 @@ Updates descriptions for multiple ONUs.
 4. **Retry Logic:** Implement client-side retry for failed operations
 5. **Monitoring:** Watch execution_time_ms for performance degradation
 
-### Next Steps (Phase 6.2 - Advanced Features - Planned)
+---
+
+## Phase 6.2: Configuration Backup/Restore ✅
+
+**Status:** Complete & Deployed (January 12, 2026)  
+**Description:** Full ONU and OLT configuration backup, restore, import/export functionality
+
+### Features Implemented
+
+#### Backup Operations
+- **Single ONU Backup:** Backup individual ONU configuration via SNMP
+- **Full OLT Backup:** Backup all ONUs across all configured PON ports
+- **Automatic Metadata:** Timestamps, source OLT IP, version tracking
+- **File-based Storage:** JSON format in `/opt/go-snmp-olt/backups`
+
+#### Restore Operations
+- **Point-in-time Restore:** Restore ONUs from any backup via Telnet
+- **Validation:** Verify backup exists and is valid before restore
+- **Error Handling:** Detailed error messages for restore failures
+
+#### Backup Management
+- **List All Backups:** View all stored backups with metadata
+- **Get Backup Details:** Full configuration details for specific backup
+- **Delete Backups:** Remove old or unnecessary backups
+- **Export Backup:** Download backup as JSON file
+- **Import Backup:** Upload and store external backup files
+
+### API Endpoints
+
+#### Backup Endpoints
+```http
+POST /api/v1/config/backup/onu/{pon}/{onuId}
+POST /api/v1/config/backup/olt
+POST /api/v1/config/backup/import
+```
+
+#### Management Endpoints
+```http
+GET    /api/v1/config/backups
+GET    /api/v1/config/backup/{backupId}
+DELETE /api/v1/config/backup/{backupId}
+GET    /api/v1/config/backup/{backupId}/export
+```
+
+#### Restore Endpoint
+```http
+POST /api/v1/config/restore/{backupId}
+```
+
+### Implementation Details
+
+#### Backup Structure
+```json
+{
+  "id": "uuid",
+  "type": "onu" | "olt",
+  "timestamp": "2026-01-12T19:28:06Z",
+  "metadata": {
+    "created_by": "system",
+    "source": "136.1.1.100",
+    "version": "v2.1.0"
+  },
+  "config": {
+    "pon_port": "1",
+    "onu_id": 1,
+    "serial_number": "ZTEGD824CDF3",
+    "type": "F601",
+    "name": "ONU_1_1",
+    "admin_state": "enabled",
+    "oper_state": "online"
+  }
+}
+```
+
+#### Environment Configuration
+```bash
+OLT_HOST=136.1.1.100              # OLT IP address
+BACKUP_DIR=/opt/go-snmp-olt/backups  # Backup storage directory
+```
+
+### Files Created
+- `internal/model/config_backup.go` - Data models (ConfigBackup, ONUConfigBackup)
+- `internal/usecase/config_backup.go` - Business logic (backup, restore, file I/O)
+- `internal/handler/config_backup.go` - HTTP handlers with Swagger docs
+- `config/config.go` - Added Host and BackupDir to OltConfig
+
+### Testing Results
+
+**All Endpoints Tested:**
+- ✅ Single ONU backup (PON 1, ONU ID 1)
+- ✅ List backups (empty and with data)
+- ✅ Get specific backup details
+- ✅ Export backup as file download
+- ✅ Delete backup
+- ✅ Import backup (file upload)
+
+**Deployment:**
+- Service: `go-snmp-olt.service`
+- Binary: `/opt/go-snmp-olt/bin/api`
+- Backup Directory: `/opt/go-snmp-olt/backups` (created with proper permissions)
+
+### Next Steps (Phase 7 - Advanced Monitoring - Planned)
 - Configuration backup/restore
 - Batch configuration operations
 - Configuration templates
