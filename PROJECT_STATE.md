@@ -1,7 +1,7 @@
 # ZTE C320 V2.1.0 SNMP Monitoring - Project State
 
 **Last Updated:** January 12, 2026  
-**Status:** Phase 1-7.1 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
+**Status:** Phase 1-7.2 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
 
 ## Project Overview
 
@@ -18,11 +18,11 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 - **SNMP:** v2c, community "public" (UDP 161)
 - **Telnet:** TCP 23 (username: zte, password: zte, enable: zxr10)
 - **Redis:** Password: `OsWkRgJLabn4n2+nodZ6BQeP+OKkrObnGeFcDY6w7Nw=`
-- **Go Version:** 1.25.5
+- **Go Version:** 1.24+
 
 ### Deployment Status
 
-**Last Deployment:** January 12, 2026 19:27 UTC
+**Last Deployment:** January 12, 2026 20:31 UTC
 
 ✅ Phase 1 (Telnet Infrastructure) - Deployed & Tested  
 ✅ Phase 2 (ONU Provisioning) - Deployed & Tested  
@@ -31,7 +31,18 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 ✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested  
 ✅ Phase 6.1 (Batch Operations) - Deployed & Tested  
 ✅ Phase 6.2 (Config Backup/Restore) - Deployed & Tested  
-✅ Phase 7.1 (Real-time ONU Monitoring) - Deployed & Tested
+✅ Phase 7.1 (Real-time ONU Monitoring) - Deployed & Tested  
+✅ **Phase 7.2 (Optical Power Monitoring via Telnet) - Deployed & Tested**
+
+**Latest Changes (Phase 7.2):**
+- ✅ Added optical power monitoring via Telnet (RX/TX power, temperature, voltage, bias current)
+- ✅ Created `internal/repository/telnet_optical.go` with optical info parsers
+- ✅ Updated monitoring endpoints to include optical data
+- ✅ Added `.env` file support via godotenv
+- ✅ Fixed routes_test.go missing parameter
+- ✅ Cleaned up VPS folder structure (consolidated to `/opt/go-snmp-olt/`)
+- ✅ Added CHANGELOG.md for version tracking
+- ✅ Updated README.md with Phase 7.2 documentation
 
 **Endpoint Tests:**
 - All 4 provisioning endpoints working
@@ -40,12 +51,20 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 - All 5 ONU management endpoints working
 - All 5 batch operation endpoints working
 - All 9 config backup/restore endpoints working
+- **All 3 monitoring endpoints working (with optical power)**
 - Telnet connectivity confirmed
 - Session management operational
+- Optical data retrieval functional
 
 **Total Configuration Endpoints:** 38 (Phases 2-6.2)  
-**Total Monitoring Endpoints:** 43+ (SNMP)  
-**Total Endpoints:** 81+
+**Total Monitoring Endpoints:** 46+ (SNMP + Telnet optical)  
+**Total Endpoints:** 84+
+
+**Git Status:**
+- Repository: https://github.com/s4lfanet/go-api-c320
+- Latest Commit: 59e68f9 (Phase 7.2 - Optical Power Monitoring)
+- Branch: main
+- Pushed to GitHub: ✅
 
 ## Critical OID Information
 
@@ -2407,12 +2426,96 @@ BACKUP_DIR=/opt/go-snmp-olt/backups  # Backup storage directory
 - `internal/utils/converter.go` - Added utility functions (FormatBytesRate, ParseOID, Extract helpers)
 
 ### Next Steps (Phase 7.2+ - Future Enhancements)
-- Optical power monitoring (requires V2.2+ firmware upgrade)
+- ~~Optical power monitoring~~ ✅ **COMPLETED via Telnet workaround**
 - Historical monitoring data storage
 - Alerting and notifications
 - Performance trend analysis
 - Dashboard integration
 - SNMP traps handling
+
+### Phase 7.2 - Optical Power Monitoring via Telnet ✅
+
+**Completed:** January 12, 2026
+
+**Problem Identified:**
+- ZTE C320 V2.1.0 firmware does **NOT** expose optical power via SNMP
+- Comprehensive SNMP scan of all `.1012.3.*` branches confirmed NO optical OIDs
+- Created diagnostic tool: `tools/snmp_optical_scanner.go`
+
+**Solution Implemented:**
+- Use Telnet command as fallback: `show gpon onu optical-info gpon-olt_1/{board}/{pon} {onu_id}`
+- Parse text output with regex to extract optical metrics
+- Integrate with existing monitoring endpoints
+
+**Implementation:**
+- **NEW Telnet Repository:**
+  - `internal/repository/telnet_optical.go` - Optical power operations
+  - `GetONUOpticalInfo(ctx, boardID, ponID, onuID)` - Single ONU optical data
+  - `GetPONOpticalInfo(ctx, boardID, ponID)` - All ONUs on PON port
+  - Text parser for Telnet output (regex-based)
+
+- **NEW Model Fields:**
+  - `internal/model/monitoring.go` - Added `OpticalInfo` struct
+  - `ONUMonitoringInfo.Optical` - Optical data field
+
+**Optical Metrics Available:**
+- **RX Power (dBm)** - Signal received by ONU from OLT
+- **TX Power (dBm)** - Signal transmitted by ONU
+- **OLT RX Power (dBm)** - Signal received by OLT from ONU
+- **Temperature (°C)** - ONU operating temperature
+- **Voltage (V)** - ONU supply voltage
+- **Bias Current (mA)** - Laser diode bias current
+- **Status Classification** - normal/low/high for each metric
+
+**Power Status Thresholds:**
+- RX Power: -28 to -8 dBm (normal)
+- TX Power: 0 to 5 dBm (normal)
+- Temperature: 0 to 70°C (normal)
+
+**Files Added:**
+- `internal/repository/telnet_optical.go` - Optical power repository
+- `tools/snmp_optical_scanner.go` - Diagnostic tool for OID discovery
+- `CHANGELOG.md` - Version history tracking
+
+**Files Modified:**
+- `internal/model/monitoring.go` - Added OpticalInfo struct
+- `internal/usecase/monitoring.go` - Injected TelnetSessionManager, integrated optical
+- `app/app.go` - Updated MonitoringUsecase initialization
+- `cmd/api/main.go` - Added godotenv for .env file support
+- `app/routes_test.go` - Fixed missing monitoringHandler parameter
+- `.gitignore` - Exclude build artifacts and diagnostic tools
+- `README.md` - Phase 7.2 documentation
+
+**VPS Cleanup:**
+- Consolidated project to `/opt/go-snmp-olt/`
+- Removed duplicate folders: `/root/go-api-c320`, `/root/go-api-new`, `/root/go-snmp`, `/root/api`
+- Single source of truth for deployment
+
+**Testing:**
+```bash
+# Test endpoint with optical data
+curl http://192.168.54.230:8081/api/v1/monitoring/onu/1/1
+
+# Response includes:
+{
+  "optical": {
+    "rx_power": -18.45,
+    "tx_power": 2.35,
+    "olt_rx_power": -18.45,
+    "temperature": 42.5,
+    "voltage": 3.28,
+    "bias_current": 15.2,
+    "rx_power_status": "normal",
+    "tx_power_status": "normal",
+    "temperature_status": "normal"
+  }
+}
+```
+
+**Git Status:**
+- Commit: `59e68f9` - "feat: Phase 7.2 - Optical Power Monitoring via Telnet"
+- Pushed to GitHub: ✅
+- Branch: main
 
 ---
 
@@ -2468,6 +2571,7 @@ go-snmp-olt-zte-c320/
 │   │   ├── telnet_vlan.go           # NEW - VLAN operations (Phase 3)
 │   │   ├── telnet_traffic.go        # NEW - Traffic profile operations (Phase 4)
 │   │   ├── telnet_onu_mgmt.go       # NEW - ONU lifecycle operations (Phase 5)
+│   │   ├── telnet_optical.go        # NEW - Optical power via Telnet (Phase 7.2)
 │   │   └── onu_repository.go        # NEW - ONU data operations (Phase 7.1)
 │   ├── middleware/
 │   ├── utils/
