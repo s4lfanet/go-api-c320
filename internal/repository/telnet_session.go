@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	"github.com/s4lfanet/go-api-c320/internal/model"
-	"github.com/rs/zerolog/log"
 )
 
 // TelnetSessionPool manages a pool of telnet connections
@@ -314,7 +314,7 @@ func (m *TelnetSessionManager) WithRetry(ctx context.Context, fn func() error) e
 			// Try to reconnect
 			session, err := m.pool.GetSession(ctx)
 			if err == nil {
-				session.Reconnect()
+				_ = session.Reconnect()
 				m.pool.ReleaseSession()
 			}
 		}

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gosnmp/gosnmp"
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	apperrors "github.com/s4lfanet/go-api-c320/internal/errors"
 	"github.com/s4lfanet/go-api-c320/internal/model"
 	"github.com/s4lfanet/go-api-c320/internal/repository"
-	"github.com/gosnmp/gosnmp"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -70,10 +70,10 @@ func (u *cardUsecase) GetAllCards(ctx context.Context) ([]*model.CardInfo, error
 		shelf := 0
 		slot := 0
 
-		fmt.Sscanf(oidParts[len(baseOIDParts)], "%d", &column)
-		fmt.Sscanf(oidParts[len(baseOIDParts)+1], "%d", &rack)
-		fmt.Sscanf(oidParts[len(baseOIDParts)+2], "%d", &shelf)
-		fmt.Sscanf(oidParts[len(baseOIDParts)+3], "%d", &slot)
+		_, _ = fmt.Sscanf(oidParts[len(baseOIDParts)], "%d", &column)
+		_, _ = fmt.Sscanf(oidParts[len(baseOIDParts)+1], "%d", &rack)
+		_, _ = fmt.Sscanf(oidParts[len(baseOIDParts)+2], "%d", &shelf)
+		_, _ = fmt.Sscanf(oidParts[len(baseOIDParts)+3], "%d", &slot)
 
 		// Create unique key for this card
 		cardKey := fmt.Sprintf("%d.%d.%d", rack, shelf, slot)

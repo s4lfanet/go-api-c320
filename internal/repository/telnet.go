@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	"github.com/s4lfanet/go-api-c320/internal/model"
-	"github.com/rs/zerolog/log"
 	"github.com/ziutek/telnet"
 )
 
@@ -87,8 +87,8 @@ func (r *telnetRepository) Connect() error {
 	r.lastActivity = time.Now()
 
 	// Set timeouts
-	r.conn.SetReadDeadline(time.Now().Add(r.config.ReadTimeout))
-	r.conn.SetWriteDeadline(time.Now().Add(r.config.WriteTimeout))
+	_ = r.conn.SetReadDeadline(time.Now().Add(r.config.ReadTimeout))
+	_ = r.conn.SetWriteDeadline(time.Now().Add(r.config.WriteTimeout))
 
 	// Login sequence
 	if err := r.login(); err != nil {
@@ -154,11 +154,11 @@ func (r *telnetRepository) Close() error {
 
 	// Try to exit gracefully
 	if r.currentMode == "config" {
-		r.sendCommand("end")
-		r.expectString(r.config.PromptEnable, 2*time.Second)
+		_ = r.sendCommand("end")
+		_ = r.expectString(r.config.PromptEnable, 2*time.Second)
 	}
 
-	r.sendCommand("exit")
+	_ = r.sendCommand("exit")
 
 	// Close connection
 	err := r.conn.Close()
@@ -479,7 +479,7 @@ func (r *telnetRepository) GetConnectionInfo() *model.TelnetConnectionInfo {
 // sendCommand sends a command with newline
 func (r *telnetRepository) sendCommand(command string) error {
 	r.lastActivity = time.Now()
-	r.conn.SetWriteDeadline(time.Now().Add(r.config.WriteTimeout))
+	_ = r.conn.SetWriteDeadline(time.Now().Add(r.config.WriteTimeout))
 
 	_, err := r.conn.Write([]byte(command + "\n"))
 	if err != nil {
@@ -493,7 +493,7 @@ func (r *telnetRepository) sendCommand(command string) error {
 // expectString waits for a specific string to appear
 func (r *telnetRepository) expectString(pattern string, timeout time.Duration) error {
 	r.lastActivity = time.Now()
-	r.conn.SetReadDeadline(time.Now().Add(timeout))
+	_ = r.conn.SetReadDeadline(time.Now().Add(timeout))
 
 	data := make([]byte, 4096)
 	buffer := ""
@@ -523,7 +523,7 @@ func (r *telnetRepository) expectString(pattern string, timeout time.Duration) e
 // readUntilPrompt reads until a prompt is detected
 func (r *telnetRepository) readUntilPrompt(timeout time.Duration) (string, error) {
 	r.lastActivity = time.Now()
-	r.conn.SetReadDeadline(time.Now().Add(timeout))
+	_ = r.conn.SetReadDeadline(time.Now().Add(timeout))
 
 	data := make([]byte, 4096)
 	buffer := ""
