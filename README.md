@@ -90,6 +90,52 @@ docker run -d -p 8081:8081 --name olt-api \
   go-api-c320
 ```
 
+### 🎯 Automated VPS Installation (Recommended for Production)
+
+One-command installer for Linux VPS (Ubuntu, Debian, CentOS, Rocky Linux):
+
+```bash
+# Quick install (downloads and runs full installer)
+curl -fsSL https://raw.githubusercontent.com/s4lfanet/go-api-c320/main/scripts/install-quickstart.sh | sudo bash
+```
+
+Or manual installation:
+
+```bash
+# Download installer
+wget https://raw.githubusercontent.com/s4lfanet/go-api-c320/main/scripts/install.sh
+chmod +x install.sh
+
+# Run installer
+sudo ./install.sh
+```
+
+The installer will:
+- ✅ Install Go 1.25.5
+- ✅ Install Redis 7.2
+- ✅ Clone and build the application
+- ✅ Create systemd service
+- ✅ Configure environment variables
+- ✅ Start the service automatically
+
+**Deployment Management:**
+```bash
+# Update to latest version
+sudo bash scripts/deploy-v21.sh
+# Select option 2: Update ke versi V2.1.0 support
+
+# View logs
+journalctl -u go-snmp-olt -f
+
+# Restart service
+systemctl restart go-snmp-olt
+
+# Check status
+systemctl status go-snmp-olt
+```
+
+📖 **Full Installation Guide:** [docs/INSTALLATION.md](docs/INSTALLATION.md)
+
 ## 🌐 API Endpoints
 
 Base URL: `http://localhost:8081/api/v1`
