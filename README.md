@@ -5,14 +5,17 @@ Production-ready REST API for ZTE C320 OLT monitoring and configuration with SNM
 
 ## 🚀 Features
 
-### Phase 1-5 Complete ✅
+### Phase 1-7 Complete ✅
 - **ONU Monitoring** (SNMP) - Real-time status, signal levels, models
 - **ONU Provisioning** (Telnet) - Auto-registration, configuration
 - **VLAN Management** (Telnet) - Service-port creation, VLAN assignment
 - **Traffic Profiles** (Telnet) - DBA profiles, T-CONT, GEM ports
 - **ONU Management** (Telnet) - Reboot, block/unblock, description, delete
+- **Batch Operations** (Telnet) - Bulk provisioning, deletion, reboot
+- **Config Backup/Restore** - Full ONU configuration backup & restore
+- **Real-time Monitoring** (SNMP + Telnet) - Live stats, optical power
 
-### Total: 45+ REST API Endpoints
+### Total: 50+ REST API Endpoints
 
 ## 📋 Technology Stack
 * [Go](https://go.dev/) - Programming language
@@ -97,6 +100,22 @@ Base URL: `http://localhost:8081/api/v1`
 - `GET /board/{board_id}/pon/{pon_id}/info` - Get PON port info
 - `GET /board/{board_id}/pon/{pon_id}/onu_id/empty` - Get available ONU IDs
 
+### Real-time Monitoring (SNMP + Telnet) - Phase 7.2 ⚡
+- `GET /monitoring/onu/{pon}/{onu_id}` - Real-time single ONU monitoring with optical power
+- `GET /monitoring/pon/{pon}` - Aggregated PON port monitoring
+- `GET /monitoring/olt` - OLT-wide monitoring summary
+
+**Optical Power Data (via Telnet):**
+- RX Power (dBm) - Signal received by OLT from ONU
+- TX Power (dBm) - Signal transmitted by ONU
+- OLT RX Power (dBm) - Signal received by OLT
+- Temperature (°C) - ONU operating temperature
+- Voltage (V) - ONU supply voltage
+- Bias Current (mA) - Laser bias current
+- Status indicators (normal/low/high) for each metric
+
+> **Note:** V2.1.0 firmware does NOT expose optical power via SNMP. This implementation uses Telnet commands as a fallback.
+
 ### ONU Provisioning (Telnet)
 - `GET /onu/unconfigured` - List unconfigured ONUs
 - `GET /onu/unconfigured/{pon}` - List unconfigured ONUs by PON
@@ -137,6 +156,54 @@ Base URL: `http://localhost:8081/api/v1`
 - `GET /profiles/vlan` - List VLAN profiles
 
 ## 📝 Example Usage
+
+### Real-time ONU Monitoring with Optical Power (Phase 7.2)
+```bash
+curl http://localhost:8081/api/v1/monitoring/onu/1/5
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "pon_port": "1",
+    "onu_id": 5,
+    "serial_number": "ZTEG1234ABCD",
+    "model": "ZTE-F660",
+    "firmware_version": "V8.0.10P3",
+    "online_status": 1,
+    "statistics": {
+      "rx_packets": 123456789,
+      "rx_bytes": 98765432100,
+      "rx_rate": "250.5 Mbps"
+    },
+    "optical": {
+      "rx_power": -18.45,
+      "tx_power": 2.35,
+      "olt_rx_power": -18.45,
+      "temperature": 42.5,
+      "voltage": 3.28,
+      "bias_current": 15.2,
+      "rx_power_status": "normal",
+      "tx_power_status": "normal",
+      "temperature_status": "normal"
+    },
+    "last_update": "2026-01-12T03:30:00Z"
+  }
+}
+```
+
+### Get PON Port Aggregated Monitoring
+```bash
+curl http://localhost:8081/api/v1/monitoring/pon/1
+```
+
+### Get OLT-wide Monitoring Summary
+```bash
+curl http://localhost:8081/api/v1/monitoring/olt
+```
 
 ### Register New ONU
 ```bash

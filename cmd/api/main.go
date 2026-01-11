@@ -3,11 +3,17 @@ package main
 import (
 	"context"
 
-	"github.com/s4lfanet/go-api-c320/app"
+	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
+	"github.com/s4lfanet/go-api-c320/app"
 )
 
 func main() {
+	// Load .env file if exists (for local development and production)
+	if err := godotenv.Load(); err != nil {
+		log.Warn().Msg("No .env file found, using environment variables")
+	}
+
 	// Initialize application
 	server := app.New()                                     // Create a new instance of the application
 	ctx, cancel := context.WithCancel(context.Background()) // Create a new context with a cancel function

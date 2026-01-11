@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+go-api-c320-linux
+go-snmp-olt
 
 # Test binary, built with `go test -c`
 *.test
@@ -30,6 +32,11 @@ tmp/*
 tmp/
 .task/
 gen/*
+
+# Tools and utilities (diagnostics only)
+tools/
+snmp-walks/
+backups/*.backup
 
 # Sensitive files - NEVER commit these
 secret.md

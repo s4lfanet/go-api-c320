@@ -108,16 +108,16 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	telnetSessionManager := repository.GetGlobalSessionManager(telnetCfg) // Get global telnet session manager
 
 	// Initialize usecase
-	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg)                                // Create new ONU usecase with repositories and config
-	ponUsecase := usecase.NewPonUsecase(snmpRepo, redisRepo, cfg)                                // Create new PON usecase with repositories and config
-	profileUsecase := usecase.NewProfileUsecase(snmpRepo, redisRepo, cfg)                        // Create new Profile usecase with repositories and config
-	cardUsecase := usecase.NewCardUsecase(snmpRepo, redisRepo, cfg)                              // Create new Card usecase with repositories and config
-	provisionUsecase := usecase.NewProvisionUsecase(telnetSessionManager, cfg)                   // Create new Provision usecase with telnet manager
-	vlanUsecase := usecase.NewVLANUsecase(telnetSessionManager, cfg)                             // Create new VLAN usecase with telnet manager
-	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)                       // Create new Traffic usecase with telnet manager
-	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg)                 // Create new ONU Management usecase with telnet manager
-	batchUsecase := usecase.NewBatchOperationsUsecase(telnetSessionManager, onuMgmtUsecase, cfg) // Create new Batch Operations usecase
-	monitoringUsecase := usecase.NewMonitoringUsecase(snmpConn, cfg, onuRepo)                    // Create new Monitoring usecase (Phase 7.1)
+	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg)                                   // Create new ONU usecase with repositories and config
+	ponUsecase := usecase.NewPonUsecase(snmpRepo, redisRepo, cfg)                                   // Create new PON usecase with repositories and config
+	profileUsecase := usecase.NewProfileUsecase(snmpRepo, redisRepo, cfg)                           // Create new Profile usecase with repositories and config
+	cardUsecase := usecase.NewCardUsecase(snmpRepo, redisRepo, cfg)                                 // Create new Card usecase with repositories and config
+	provisionUsecase := usecase.NewProvisionUsecase(telnetSessionManager, cfg)                      // Create new Provision usecase with telnet manager
+	vlanUsecase := usecase.NewVLANUsecase(telnetSessionManager, cfg)                                // Create new VLAN usecase with telnet manager
+	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)                          // Create new Traffic usecase with telnet manager
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg)                    // Create new ONU Management usecase with telnet manager
+	batchUsecase := usecase.NewBatchOperationsUsecase(telnetSessionManager, onuMgmtUsecase, cfg)    // Create new Batch Operations usecase
+	monitoringUsecase := usecase.NewMonitoringUsecase(snmpConn, cfg, onuRepo, telnetSessionManager) // Create new Monitoring usecase with SNMP + Telnet (Phase 7.2)
 
 	// Initialize handler
 	onuHandler := handler.NewOnuHandler(onuUsecase)                      // Create new ONU handler with usecase

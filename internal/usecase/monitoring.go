@@ -18,17 +18,19 @@ import (
 
 // MonitoringUsecase handles real-time ONU monitoring operations
 type MonitoringUsecase struct {
-	snmp    *gosnmp.GoSNMP
-	cfg     *config.Config
-	onuRepo *repository.OnuRepository
+	snmp      *gosnmp.GoSNMP
+	cfg       *config.Config
+	onuRepo   *repository.OnuRepository
+	telnetMgr *repository.TelnetSessionManager
 }
 
 // NewMonitoringUsecase creates a new MonitoringUsecase instance
-func NewMonitoringUsecase(snmp *gosnmp.GoSNMP, cfg *config.Config, onuRepo *repository.OnuRepository) *MonitoringUsecase {
+func NewMonitoringUsecase(snmp *gosnmp.GoSNMP, cfg *config.Config, onuRepo *repository.OnuRepository, telnetMgr *repository.TelnetSessionManager) *MonitoringUsecase {
 	return &MonitoringUsecase{
-		snmp:    snmp,
-		cfg:     cfg,
-		onuRepo: onuRepo,
+		snmp:      snmp,
+		cfg:       cfg,
+		onuRepo:   onuRepo,
+		telnetMgr: telnetMgr,
 	}
 }
 
@@ -105,6 +107,26 @@ func (uc *MonitoringUsecase) GetONUMonitoring(ctx context.Context, ponPort strin
 			stats.RxRate = utils.FormatBytesRate(stats.RxBytes)
 		}
 		monitoring.Statistics = stats
+	}
+
+	// Get optical info via Telnet (V2.1.0 doesn't have SNMP OIDs for optical power)
+	if uc.telnetMgr != nil {
+		opticalInfo, err := uc.telnetMgr.GetONUOpticalInfo(ctx, 1, utils.ConvertStringToInt(ponPort), onuID)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to get ONU optical info via Telnet, continuing without optical data")
+		} else if opticalInfo != nil {
+			monitoring.Optical = &model.OpticalInfo{
+				RxPower:           opticalInfo.RxPower,
+				TxPower:           opticalInfo.TxPower,
+				OLTRxPower:        opticalInfo.OLTRxPower,
+				Temperature:       opticalInfo.Temperature,
+				Voltage:           opticalInfo.Voltage,
+				BiasCurrent:       opticalInfo.BiasCurrent,
+				RxPowerStatus:     opticalInfo.RxPowerStatus,
+				TxPowerStatus:     opticalInfo.TxPowerStatus,
+				TemperatureStatus: opticalInfo.TemperatureStatus,
+			}
+		}
 	}
 
 	log.Info().

@@ -11,6 +11,7 @@ type ONUMonitoringInfo struct {
 	FirmwareVer  string         `json:"firmware_version"`
 	OnlineStatus int            `json:"online_status"` // 1=online, 0=offline
 	Statistics   *ONUStatistics `json:"statistics,omitempty"`
+	Optical      *OpticalInfo   `json:"optical,omitempty"` // Optical power info (via Telnet)
 	LastUpdate   time.Time      `json:"last_update"`
 }
 
@@ -19,6 +20,19 @@ type ONUStatistics struct {
 	RxPackets uint64 `json:"rx_packets"` // Received packets
 	RxBytes   uint64 `json:"rx_bytes"`   // Received bytes
 	RxRate    string `json:"rx_rate"`    // Human readable rate (e.g., "1.5 Mbps")
+}
+
+// OpticalInfo represents optical power information for an ONU (via Telnet)
+type OpticalInfo struct {
+	RxPower           float64 `json:"rx_power"`           // ONU received power (dBm)
+	TxPower           float64 `json:"tx_power"`           // ONU transmit power (dBm)
+	OLTRxPower        float64 `json:"olt_rx_power"`       // OLT received power from ONU (dBm)
+	Temperature       float64 `json:"temperature"`        // ONU temperature (°C)
+	Voltage           float64 `json:"voltage"`            // ONU voltage (V)
+	BiasCurrent       float64 `json:"bias_current"`       // Bias current (mA)
+	RxPowerStatus     string  `json:"rx_power_status"`    // normal/low/high
+	TxPowerStatus     string  `json:"tx_power_status"`    // normal/low/high
+	TemperatureStatus string  `json:"temperature_status"` // normal/low/high
 }
 
 // PONMonitoringInfo represents aggregated monitoring for a PON port
