@@ -226,3 +226,116 @@ func TestLoadRoutes_CORSHeaders(t *testing.T) {
 		t.Error("Expected CORS headers to be set")
 	}
 }
+
+		t.Errorf("Expected status %d, got %d", http.StatusOK, rr.Code)
+	}
+}
+
+func TestLoadRoutes_APIv1ProfileRoutes(t *testing.T) {
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
+	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+
+	tests := []struct {
+		name   string
+		path   string
+		status int
+	}{
+		{"GET all traffic profiles", "/api/v1/profiles/traffic/", http.StatusOK},
+		{"GET specific traffic profile", "/api/v1/profiles/traffic/1", http.StatusOK},
+		{"GET all VLAN profiles", "/api/v1/profiles/vlan/", http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, req)
+
+			if rr.Code != tt.status {
+				t.Errorf("Expected status %d, got %d", tt.status, rr.Code)
+			}
+		})
+	}
+}
+
+func TestLoadRoutes_APIv1SystemRoutes(t *testing.T) {
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
+	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+
+	tests := []struct {
+		name   string
+		path   string
+		status int
+	}{
+		{"GET all cards", "/api/v1/system/cards/", http.StatusOK},
+		{"GET specific card", "/api/v1/system/cards/1/1/1", http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, req)
+
+			if rr.Code != tt.status {
+				t.Errorf("Expected status %d, got %d", tt.status, rr.Code)
+			}
+		})
+	}
+}
+
+func TestLoadRoutes_APIv1RouteNotFound(t *testing.T) {
+	onuUsecase := &mockOnuUsecase{}
+	ponUsecase := &mockPonUsecase{}
+	profileUsecase := &mockProfileUsecase{}
+	cardUsecase := &mockCardUsecase{}
+
+	onuHandler := handler.NewOnuHandler(onuUsecase)
+	ponHandler := handler.NewPonHandler(ponUsecase)
+	profileHandler := handler.NewProfileHandler(profileUsecase)
+	cardHandler := handler.NewCardHandler(cardUsecase)
+	provisionUsecase := usecase.NewProvisionUsecase(nil, nil)
+	provisionHandler := handler.NewProvisionHandler(provisionUsecase)
+	vlanUsecase := usecase.NewVLANUsecase(nil, nil)
+	vlanHandler := handler.NewVLANHandler(vlanUsecase)
+	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
+	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
