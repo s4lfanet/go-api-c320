@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	rds "github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	"github.com/s4lfanet/go-api-c320/internal/handler"
 	"github.com/s4lfanet/go-api-c320/internal/repository"
@@ -11,8 +13,6 @@ import (
 	"github.com/s4lfanet/go-api-c320/pkg/graceful"
 	"github.com/s4lfanet/go-api-c320/pkg/redis"
 	"github.com/s4lfanet/go-api-c320/pkg/snmp"
-	rds "github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 )
 
 // App represents the main application structure that holds the HTTP router
@@ -105,14 +105,15 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	telnetSessionManager := repository.GetGlobalSessionManager(telnetCfg) // Get global telnet session manager
 
 	// Initialize usecase
-	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg)                // Create new ONU usecase with repositories and config
-	ponUsecase := usecase.NewPonUsecase(snmpRepo, redisRepo, cfg)                // Create new PON usecase with repositories and config
-	profileUsecase := usecase.NewProfileUsecase(snmpRepo, redisRepo, cfg)        // Create new Profile usecase with repositories and config
-	cardUsecase := usecase.NewCardUsecase(snmpRepo, redisRepo, cfg)              // Create new Card usecase with repositories and config
-	provisionUsecase := usecase.NewProvisionUsecase(telnetSessionManager, cfg)   // Create new Provision usecase with telnet manager
-	vlanUsecase := usecase.NewVLANUsecase(telnetSessionManager, cfg)             // Create new VLAN usecase with telnet manager
-	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)       // Create new Traffic usecase with telnet manager
-	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg) // Create new ONU Management usecase with telnet manager
+	onuUsecase := usecase.NewOnuUsecase(snmpRepo, redisRepo, cfg)                                // Create new ONU usecase with repositories and config
+	ponUsecase := usecase.NewPonUsecase(snmpRepo, redisRepo, cfg)                                // Create new PON usecase with repositories and config
+	profileUsecase := usecase.NewProfileUsecase(snmpRepo, redisRepo, cfg)                        // Create new Profile usecase with repositories and config
+	cardUsecase := usecase.NewCardUsecase(snmpRepo, redisRepo, cfg)                              // Create new Card usecase with repositories and config
+	provisionUsecase := usecase.NewProvisionUsecase(telnetSessionManager, cfg)                   // Create new Provision usecase with telnet manager
+	vlanUsecase := usecase.NewVLANUsecase(telnetSessionManager, cfg)                             // Create new VLAN usecase with telnet manager
+	trafficUsecase := usecase.NewTrafficUsecase(telnetSessionManager, cfg)                       // Create new Traffic usecase with telnet manager
+	onuMgmtUsecase := usecase.NewONUManagementUsecase(telnetSessionManager, cfg)                 // Create new ONU Management usecase with telnet manager
+	batchUsecase := usecase.NewBatchOperationsUsecase(telnetSessionManager, onuMgmtUsecase, cfg) // Create new Batch Operations usecase
 
 	// Initialize handler
 	onuHandler := handler.NewOnuHandler(onuUsecase)                   // Create new ONU handler with usecase
@@ -123,9 +124,10 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	vlanHandler := handler.NewVLANHandler(vlanUsecase)                // Create new VLAN handler with usecase
 	trafficHandler := handler.NewTrafficHandler(trafficUsecase)       // Create new Traffic handler with usecase
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase) // Create new ONU Management handler with usecase
+	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)   // Create new Batch Operations handler with usecase
 
 	// Initialize router
-	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler) // Load all routes and middleware, assigning to app router
+	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler) // Load all routes and middleware, assigning to app router
 
 	// Start server
 	addr := "8081"          // Define the server address/port

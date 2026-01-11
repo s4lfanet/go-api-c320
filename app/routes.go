@@ -5,14 +5,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/s4lfanet/go-api-c320/internal/handler"
-	"github.com/s4lfanet/go-api-c320/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/s4lfanet/go-api-c320/internal/handler"
+	"github.com/s4lfanet/go-api-c320/internal/middleware"
 )
 
-func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface) http.Handler { // Function to configure and return the HTTP router
+func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface, batchHandler handler.BatchOperationsHandlerInterface) http.Handler { // Function to configure and return the HTTP router
 
 	// Initialize logger
 	l := log.Output(zerolog.ConsoleWriter{ // Create a new logger with console writer output
@@ -134,6 +134,15 @@ func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, 
 		r.Post("/unblock", onuMgmtHandler.UnblockONU)           // POST unblock (enable) ONU
 		r.Put("/description", onuMgmtHandler.UpdateDescription) // PUT update ONU description
 		r.Delete("/{pon}/{onu_id}", onuMgmtHandler.DeleteONU)   // DELETE ONU configuration
+	})
+
+	// Define routes for /api/v1/batch (Batch operations - Phase 6)
+	apiV1Group.Route("/batch", func(r chi.Router) {
+		r.Post("/reboot", batchHandler.BatchRebootONUs)              // POST batch reboot ONUs
+		r.Post("/block", batchHandler.BatchBlockONUs)                // POST batch block ONUs
+		r.Post("/unblock", batchHandler.BatchUnblockONUs)            // POST batch unblock ONUs
+		r.Post("/delete", batchHandler.BatchDeleteONUs)              // POST batch delete ONUs
+		r.Put("/descriptions", batchHandler.BatchUpdateDescriptions) // PUT batch update descriptions
 	})
 
 	// Mount /api/v1/ to root router

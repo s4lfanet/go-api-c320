@@ -336,3 +336,87 @@ type TrafficProfileAssignmentResponse struct {
 	Success    bool   `json:"success"`
 	Message    string `json:"message"`
 }
+
+// ============================================
+// Phase 6: Batch Operations Models
+// ============================================
+
+// ONUTarget represents a single ONU target for batch operations
+type ONUTarget struct {
+	PONPort string `json:"pon_port" validate:"required"`
+	ONUID   int    `json:"onu_id" validate:"required,min=1,max=128"`
+}
+
+// BatchOperationResult represents the result of a single operation in a batch
+type BatchOperationResult struct {
+	PONPort string `json:"pon_port"`
+	ONUID   int    `json:"onu_id"`
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// BatchONURebootRequest represents a request to reboot multiple ONUs
+type BatchONURebootRequest struct {
+	Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+
+// BatchONURebootResponse represents the response after batch ONU reboot
+type BatchONURebootResponse struct {
+	TotalTargets    int                    `json:"total_targets"`
+	SuccessCount    int                    `json:"success_count"`
+	FailureCount    int                    `json:"failure_count"`
+	Results         []BatchOperationResult `json:"results"`
+	ExecutionTimeMs int64                  `json:"execution_time_ms"`
+}
+
+// BatchONUBlockRequest represents a request to block/unblock multiple ONUs
+type BatchONUBlockRequest struct {
+	Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+	Block   bool        `json:"block"` // true=block, false=unblock
+}
+
+// BatchONUBlockResponse represents the response after batch ONU block/unblock
+type BatchONUBlockResponse struct {
+	Blocked         bool                   `json:"blocked"` // Operation type (blocked or unblocked)
+	TotalTargets    int                    `json:"total_targets"`
+	SuccessCount    int                    `json:"success_count"`
+	FailureCount    int                    `json:"failure_count"`
+	Results         []BatchOperationResult `json:"results"`
+	ExecutionTimeMs int64                  `json:"execution_time_ms"`
+}
+
+// BatchONUDeleteRequest represents a request to delete multiple ONUs
+type BatchONUDeleteRequest struct {
+	Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+
+// BatchONUDeleteResponse represents the response after batch ONU deletion
+type BatchONUDeleteResponse struct {
+	TotalTargets    int                    `json:"total_targets"`
+	SuccessCount    int                    `json:"success_count"`
+	FailureCount    int                    `json:"failure_count"`
+	Results         []BatchOperationResult `json:"results"`
+	ExecutionTimeMs int64                  `json:"execution_time_ms"`
+}
+
+// BatchONUDescriptionRequest represents a request to update descriptions for multiple ONUs
+type BatchONUDescriptionRequest struct {
+	Targets []ONUDescriptionTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+
+// ONUDescriptionTarget represents a single ONU with description for batch update
+type ONUDescriptionTarget struct {
+	PONPort     string `json:"pon_port" validate:"required"`
+	ONUID       int    `json:"onu_id" validate:"required,min=1,max=128"`
+	Description string `json:"description" validate:"required,max=64"`
+}
+
+// BatchONUDescriptionResponse represents the response after batch description update
+type BatchONUDescriptionResponse struct {
+	TotalTargets    int                    `json:"total_targets"`
+	SuccessCount    int                    `json:"success_count"`
+	FailureCount    int                    `json:"failure_count"`
+	Results         []BatchOperationResult `json:"results"`
+	ExecutionTimeMs int64                  `json:"execution_time_ms"`
+}
