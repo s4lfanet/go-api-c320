@@ -126,8 +126,12 @@ func (a *App) Start(ctx context.Context) error { // Method to start the applicat
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase) // Create new ONU Management handler with usecase
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)   // Create new Batch Operations handler with usecase
 
+	// Initialize Config Backup handler (Phase 6.2)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(cfg, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase) // Create config backup usecase
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)                                                // Create new Config Backup handler
+
 	// Initialize router
-	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler) // Load all routes and middleware, assigning to app router
+	a.router = loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler) // Load all routes and middleware, assigning to app router
 
 	// Start server
 	addr := "8081"          // Define the server address/port

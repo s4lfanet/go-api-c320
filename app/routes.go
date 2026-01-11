@@ -12,7 +12,7 @@ import (
 	"github.com/s4lfanet/go-api-c320/internal/middleware"
 )
 
-func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface, batchHandler handler.BatchOperationsHandlerInterface) http.Handler { // Function to configure and return the HTTP router
+func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, profileHandler *handler.ProfileHandler, cardHandler *handler.CardHandler, provisionHandler *handler.ProvisionHandler, vlanHandler handler.VLANHandlerInterface, trafficHandler handler.TrafficHandlerInterface, onuMgmtHandler handler.ONUManagementHandlerInterface, batchHandler handler.BatchOperationsHandlerInterface, configBackupHandler *handler.ConfigBackupHandler) http.Handler { // Function to configure and return the HTTP router
 
 	// Initialize logger
 	l := log.Output(zerolog.ConsoleWriter{ // Create a new logger with console writer output
@@ -136,13 +136,30 @@ func loadRoutes(onuHandler *handler.OnuHandler, ponHandler *handler.PonHandler, 
 		r.Delete("/{pon}/{onu_id}", onuMgmtHandler.DeleteONU)   // DELETE ONU configuration
 	})
 
-	// Define routes for /api/v1/batch (Batch operations - Phase 6)
+	// Define routes for /api/v1/batch (Batch operations - Phase 6.1)
 	apiV1Group.Route("/batch", func(r chi.Router) {
 		r.Post("/reboot", batchHandler.BatchRebootONUs)              // POST batch reboot ONUs
 		r.Post("/block", batchHandler.BatchBlockONUs)                // POST batch block ONUs
 		r.Post("/unblock", batchHandler.BatchUnblockONUs)            // POST batch unblock ONUs
 		r.Post("/delete", batchHandler.BatchDeleteONUs)              // POST batch delete ONUs
 		r.Put("/descriptions", batchHandler.BatchUpdateDescriptions) // PUT batch update descriptions
+	})
+
+	// Define routes for /api/v1/config (Configuration backup/restore - Phase 6.2)
+	apiV1Group.Route("/config", func(r chi.Router) {
+		// Backup operations
+		r.Post("/backup/onu/{pon}/{onuId}", configBackupHandler.BackupONU) // POST backup single ONU
+		r.Post("/backup/olt", configBackupHandler.BackupOLT)               // POST backup entire OLT
+		r.Post("/backup/import", configBackupHandler.ImportBackup)         // POST import backup from file
+
+		// Backup management
+		r.Get("/backups", configBackupHandler.ListBackups)                   // GET list all backups
+		r.Get("/backup/{backupId}", configBackupHandler.GetBackup)           // GET specific backup
+		r.Delete("/backup/{backupId}", configBackupHandler.DeleteBackup)     // DELETE backup
+		r.Get("/backup/{backupId}/export", configBackupHandler.ExportBackup) // GET export backup as file
+
+		// Restore operations
+		r.Post("/restore/{backupId}", configBackupHandler.RestoreFromBackup) // POST restore from backup
 	})
 
 	// Mount /api/v1/ to root router

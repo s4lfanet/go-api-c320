@@ -40,10 +40,12 @@ type RedisConfig struct { // Define the RedisConfig struct for Redis settings
 // OltConfig contains base OID configurations for OLT device management
 // including common OIDs for ONU identification and type mapping.
 type OltConfig struct { // Define the OltConfig struct for OLT settings
+	Host            string `mapstructure:"host"`        // OLT host IP address
 	BaseOID1        string `mapstructure:"base_oid_1"`  // First base OID string, mapped from "base_oid_1"
 	BaseOID2        string `mapstructure:"base_oid_2"`  // Second base OID string, mapped from "base_oid_2"
 	OnuIDNameAllPon string `mapstructure:"onu_id_name"` // OID name for ONU ID across all PONs, mapped from "onu_id_name"
 	OnuTypeAllPon   string `mapstructure:"onu_type"`    // OID type for ONU across all PONs, mapped from "onu_type"
+	BackupDir       string `mapstructure:"backup_dir"`  // Directory for configuration backups
 }
 
 // BoardPonKey represents the unique key for board/pon lookup

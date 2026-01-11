@@ -114,8 +114,10 @@ func TestLoadRoutes(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
 
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	if router == nil {
 		t.Error("Expected non-nil router")
@@ -142,7 +144,9 @@ func TestLoadRoutes_RootEndpoint(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -174,7 +178,9 @@ func TestLoadRoutes_MiddlewareApplied(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
@@ -213,7 +219,9 @@ func TestLoadRoutes_CORSHeaders(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	req := httptest.NewRequest("OPTIONS", "/", nil)
 	req.Header.Set("Origin", "http://localhost:3000")
@@ -247,8 +255,10 @@ func TestLoadRoutes_APIv1ProfileRoutes(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
 
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	tests := []struct {
 		name   string
@@ -293,8 +303,10 @@ func TestLoadRoutes_APIv1SystemRoutes(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
 
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	tests := []struct {
 		name   string
@@ -338,7 +350,9 @@ func TestLoadRoutes_APIv1RouteNotFound(t *testing.T) {
 	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
 	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
 	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
-	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+	configBackupUsecase := usecase.NewConfigBackupUsecase(nil, onuMgmtUsecase, vlanUsecase, trafficUsecase, provisionUsecase)
+	configBackupHandler := handler.NewConfigBackupHandler(configBackupUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler, configBackupHandler)
 
 	req := httptest.NewRequest("GET", "/api/v1/nonexistent", nil)
 	rr := httptest.NewRecorder()
