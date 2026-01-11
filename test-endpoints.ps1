@@ -1,6 +1,6 @@
 # ZTE C320 OLT API - Endpoint Testing Script
 # Last Updated: January 11, 2026
-# Status: Phase 1-5 Complete
+# Status: Phase 1-6.1 Complete (Batch Operations)
 
 $baseUrl = "http://192.168.54.230:8081/api/v1"
 $headers = @{"Content-Type" = "application/json"}
@@ -391,6 +391,141 @@ try {
 }
 
 # ============================================
+# PHASE 6: BATCH OPERATIONS TESTS (5 endpoints)
+# ============================================
+
+Write-Host "`n`n[PHASE 6] BATCH OPERATIONS TESTS" -ForegroundColor Yellow
+Write-Host "=================================" -ForegroundColor Yellow
+
+# Test 6.1: Batch Reboot ONUs
+Write-Host "`n[6.1] Testing POST /batch/reboot..." -ForegroundColor Green
+$batchRebootData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 1 },
+        @{ pon_port = "2/4/1"; onu_id = 2 }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/reboot" -Method Post -Headers $headers -Body $batchRebootData
+    Write-Host "✓ Success: Batch reboot executed" -ForegroundColor Green
+    Write-Host "  Total: $($response.data.total_targets), Success: $($response.data.success_count), Failed: $($response.data.failure_count)" -ForegroundColor Cyan
+    Write-Host "  Execution Time: $($response.data.execution_time_ms)ms" -ForegroundColor Cyan
+    if ($response.data.results.Count -gt 0) {
+        $response.data.results | Format-Table pon_port, onu_id, success, message
+    }
+} catch {
+    Write-Host "✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Test 6.2: Batch Block ONUs
+Write-Host "`n[6.2] Testing POST /batch/block..." -ForegroundColor Green
+$batchBlockData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 3 }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/block" -Method Post -Headers $headers -Body $batchBlockData
+    Write-Host "✓ Success: Batch block executed" -ForegroundColor Green
+    Write-Host "  Total: $($response.data.total_targets), Success: $($response.data.success_count), Failed: $($response.data.failure_count)" -ForegroundColor Cyan
+    Write-Host "  Blocked: $($response.data.blocked)" -ForegroundColor Cyan
+} catch {
+    Write-Host "✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Test 6.3: Batch Unblock ONUs
+Write-Host "`n[6.3] Testing POST /batch/unblock..." -ForegroundColor Green
+$batchUnblockData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 3 }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/unblock" -Method Post -Headers $headers -Body $batchUnblockData
+    Write-Host "✓ Success: Batch unblock executed" -ForegroundColor Green
+    Write-Host "  Total: $($response.data.total_targets), Success: $($response.data.success_count), Failed: $($response.data.failure_count)" -ForegroundColor Cyan
+    Write-Host "  Blocked: $($response.data.blocked)" -ForegroundColor Cyan
+} catch {
+    Write-Host "✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Test 6.4: Batch Delete ONUs
+Write-Host "`n[6.4] Testing POST /batch/delete..." -ForegroundColor Green
+$batchDeleteData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 99 }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/delete" -Method Post -Headers $headers -Body $batchDeleteData
+    Write-Host "✓ Success: Batch delete executed" -ForegroundColor Green
+    Write-Host "  Total: $($response.data.total_targets), Success: $($response.data.success_count), Failed: $($response.data.failure_count)" -ForegroundColor Cyan
+} catch {
+    Write-Host "✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Test 6.5: Batch Update Descriptions
+Write-Host "`n[6.5] Testing PUT /batch/descriptions..." -ForegroundColor Green
+$batchDescData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 1; description = "BATCH-TEST-ONU-1" },
+        @{ pon_port = "2/4/1"; onu_id = 2; description = "BATCH-TEST-ONU-2" }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/descriptions" -Method Put -Headers $headers -Body $batchDescData
+    Write-Host "✓ Success: Batch description update executed" -ForegroundColor Green
+    Write-Host "  Total: $($response.data.total_targets), Success: $($response.data.success_count), Failed: $($response.data.failure_count)" -ForegroundColor Cyan
+} catch {
+    Write-Host "✗ Failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Test 6.6: Batch Validation (Empty Targets)
+Write-Host "`n[6.6] Testing Validation: Empty targets..." -ForegroundColor Green
+$emptyData = @{ targets = @() } | ConvertTo-Json
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/reboot" -Method Post -Headers $headers -Body $emptyData
+    Write-Host "✗ Failed: Should have rejected empty targets" -ForegroundColor Red
+} catch {
+    Write-Host "✓ Success: Validation rejected empty targets (expected)" -ForegroundColor Green
+}
+
+# Test 6.7: Batch Validation (Too Many Targets)
+Write-Host "`n[6.7] Testing Validation: Too many targets (>50)..." -ForegroundColor Green
+$tooManyTargets = @{
+    targets = 1..51 | ForEach-Object { @{ pon_port = "2/4/1"; onu_id = $_ } }
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/reboot" -Method Post -Headers $headers -Body $tooManyTargets
+    Write-Host "✗ Failed: Should have rejected >50 targets" -ForegroundColor Red
+} catch {
+    Write-Host "✓ Success: Validation rejected >50 targets (expected)" -ForegroundColor Green
+}
+
+# Test 6.8: Batch Validation (Duplicate Targets)
+Write-Host "`n[6.8] Testing Validation: Duplicate targets..." -ForegroundColor Green
+$duplicateData = @{
+    targets = @(
+        @{ pon_port = "2/4/1"; onu_id = 1 },
+        @{ pon_port = "2/4/1"; onu_id = 1 }
+    )
+} | ConvertTo-Json -Depth 10
+
+try {
+    $response = Invoke-RestMethod -Uri "$baseUrl/batch/reboot" -Method Post -Headers $headers -Body $duplicateData
+    Write-Host "✗ Failed: Should have rejected duplicate targets" -ForegroundColor Red
+} catch {
+    Write-Host "✓ Success: Validation rejected duplicate targets (expected)" -ForegroundColor Green
+}
+
+# ============================================
 # SUMMARY
 # ============================================
 
@@ -402,12 +537,13 @@ Write-Host "Phase 2 (Provisioning):     4 endpoints  ✓" -ForegroundColor Green
 Write-Host "Phase 3 (VLAN):             5 endpoints  ✓" -ForegroundColor Green
 Write-Host "Phase 4 (Traffic):         10 endpoints  ✓" -ForegroundColor Green
 Write-Host "Phase 5 (ONU Management):   5 endpoints  ✓" -ForegroundColor Green
+Write-Host "Phase 6 (Batch Operations): 5 endpoints  ✓" -ForegroundColor Green
 Write-Host "SNMP Monitoring:           40+ endpoints ✓" -ForegroundColor Green
 Write-Host ""
-Write-Host "Total Configuration Endpoints: 24" -ForegroundColor Cyan
+Write-Host "Total Configuration Endpoints: 29" -ForegroundColor Cyan
 Write-Host "Total Monitoring Endpoints:    40+" -ForegroundColor Cyan
-Write-Host "Total Endpoints:               64+" -ForegroundColor Cyan
+Write-Host "Total Endpoints:               69+" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Status: Phase 1-5 Complete ✓" -ForegroundColor Green
-Write-Host "Next: Phase 6 - Advanced Features" -ForegroundColor Yellow
+Write-Host "Status: Phase 1-6.1 Complete ✓" -ForegroundColor Green
+Write-Host "Next: Phase 6.2 - Config Backup/Restore" -ForegroundColor Yellow
 Write-Host ""

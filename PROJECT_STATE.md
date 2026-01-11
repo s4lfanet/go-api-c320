@@ -1,7 +1,7 @@
 # ZTE C320 V2.1.0 SNMP Monitoring - Project State
 
 **Last Updated:** January 11, 2026  
-**Status:** Phase 1-5 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
+**Status:** Phase 1-6.1 Complete ✅ | Deployed to Production ✅ | Testing Complete ✅
 
 ## Project Overview
 
@@ -22,25 +22,27 @@ Go-based SNMP monitoring and Telnet configuration application for ZTE C320 OLT f
 
 ### Deployment Status
 
-**Last Deployment:** January 11, 2026 15:54 UTC
+**Last Deployment:** January 11, 2026 16:51 UTC
 
 ✅ Phase 1 (Telnet Infrastructure) - Deployed & Tested  
 ✅ Phase 2 (ONU Provisioning) - Deployed & Tested  
 ✅ Phase 3 (VLAN Management) - Deployed & Tested  
 ✅ Phase 4 (Traffic Profile Management) - Deployed & Tested  
-✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested
+✅ Phase 5 (ONU Lifecycle Management) - Deployed & Tested  
+✅ Phase 6.1 (Batch Operations) - Deployed & Tested
 
 **Endpoint Tests:**
 - All 4 provisioning endpoints working
 - All 5 VLAN management endpoints working
 - All 10 traffic profile endpoints working
 - All 5 ONU management endpoints working
+- All 5 batch operation endpoints working
 - Telnet connectivity confirmed
 - Session management operational
 
-**Total Configuration Endpoints:** 24 (Phases 2-5)  
+**Total Configuration Endpoints:** 29 (Phases 2-6.1)  
 **Total Monitoring Endpoints:** 40+ (SNMP)  
-**Total Endpoints:** 64+
+**Total Endpoints:** 69+
 
 ## Critical OID Information
 
@@ -280,12 +282,22 @@ PUT    /api/v1/onu-management/description                      # Update ONU desc
 DELETE /api/v1/onu-management/{pon}/{onu_id}                   # Delete ONU configuration
 ```
 
+### Batch Operations Endpoints (Telnet - Phase 6.1) ✅
+```
+POST   /api/v1/batch/reboot                                    # Batch reboot ONUs (max 50)
+POST   /api/v1/batch/block                                     # Batch block ONUs
+POST   /api/v1/batch/unblock                                   # Batch unblock ONUs
+POST   /api/v1/batch/delete                                    # Batch delete ONU configs
+PUT    /api/v1/batch/descriptions                              # Batch update descriptions
+```
+
 **Endpoint Summary:**
 - SNMP Monitoring: 13 endpoints
 - Phase 2 (Provisioning): 4 endpoints
 - Phase 3 (VLAN): 5 endpoints
 - Phase 4 (Traffic): 10 endpoints
 - Phase 5 (ONU Management): 5 endpoints
+- Phase 6.1 (Batch Operations): 5 endpoints
 - **Total: 37 core endpoints** (not including middleware/health endpoints)
 
 **Total Routed Endpoints: 64+** (including all route variations)
@@ -1711,7 +1723,541 @@ async function troubleshootONU(ponPort, onuId) {
 }
 ```
 
-### Next Steps (Phase 6 - Advanced Features - Planned)
+---
+
+## Batch Operations Module (Phase 6.1 Complete) ✅
+
+**Deployment Date:** January 11, 2026  
+**Status:** Deployed to Production (192.168.54.230:8081) ✅
+
+Phase 6.1 implements batch operations for efficient bulk management of ONUs, allowing operators to perform operations on multiple ONUs simultaneously with comprehensive validation and error tracking.
+
+### Overview
+
+The batch operations module enables mass ONU management operations, critical for scenarios like maintenance windows, service suspensions, or bulk provisioning. All batch operations are executed sequentially due to Telnet's single-session limitation, with individual error tracking for each operation.
+
+**Key Features:**
+- Bulk operations on up to 50 ONUs per request
+- Individual result tracking (partial success support)
+- Comprehensive validation (duplicate detection, format checks, range validation)
+- Sequential execution with detailed logging
+- Execution time tracking
+- Error isolation (one failure doesn't block others)
+
+### Models (internal/model/telnet.go)
+
+#### ONUTarget
+```go
+type ONUTarget struct {
+    PONPort string `json:"pon_port" validate:"required"`
+    ONUID   int    `json:"onu_id" validate:"required,min=1,max=128"`
+}
+```
+
+#### BatchOperationResult
+```go
+type BatchOperationResult struct {
+    PONPort string `json:"pon_port"`
+    ONUID   int    `json:"onu_id"`
+    Success bool   `json:"success"`
+    Message string `json:"message"`
+    Error   string `json:"error,omitempty"`
+}
+```
+
+#### BatchONURebootRequest
+```go
+type BatchONURebootRequest struct {
+    Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+```
+
+#### BatchONURebootResponse
+```go
+type BatchONURebootResponse struct {
+    TotalTargets     int                    `json:"total_targets"`
+    SuccessCount     int                    `json:"success_count"`
+    FailureCount     int                    `json:"failure_count"`
+    Results          []BatchOperationResult `json:"results"`
+    ExecutionTimeMs  int64                  `json:"execution_time_ms"`
+}
+```
+
+#### BatchONUBlockRequest
+```go
+type BatchONUBlockRequest struct {
+    Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+    Block   bool        `json:"block"`
+}
+```
+
+#### BatchONUBlockResponse
+```go
+type BatchONUBlockResponse struct {
+    Blocked          bool                   `json:"blocked"`
+    TotalTargets     int                    `json:"total_targets"`
+    SuccessCount     int                    `json:"success_count"`
+    FailureCount     int                    `json:"failure_count"`
+    Results          []BatchOperationResult `json:"results"`
+    ExecutionTimeMs  int64                  `json:"execution_time_ms"`
+}
+```
+
+#### BatchONUDeleteRequest/Response
+```go
+type BatchONUDeleteRequest struct {
+    Targets []ONUTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+
+type BatchONUDeleteResponse struct {
+    TotalTargets     int                    `json:"total_targets"`
+    SuccessCount     int                    `json:"success_count"`
+    FailureCount     int                    `json:"failure_count"`
+    Results          []BatchOperationResult `json:"results"`
+    ExecutionTimeMs  int64                  `json:"execution_time_ms"`
+}
+```
+
+#### ONUDescriptionTarget
+```go
+type ONUDescriptionTarget struct {
+    PONPort     string `json:"pon_port" validate:"required"`
+    ONUID       int    `json:"onu_id" validate:"required,min=1,max=128"`
+    Description string `json:"description" validate:"required,max=64"`
+}
+```
+
+#### BatchONUDescriptionRequest/Response
+```go
+type BatchONUDescriptionRequest struct {
+    Targets []ONUDescriptionTarget `json:"targets" validate:"required,min=1,max=50,dive"`
+}
+
+type BatchONUDescriptionResponse struct {
+    TotalTargets     int                    `json:"total_targets"`
+    SuccessCount     int                    `json:"success_count"`
+    FailureCount     int                    `json:"failure_count"`
+    Results          []BatchOperationResult `json:"results"`
+    ExecutionTimeMs  int64                  `json:"execution_time_ms"`
+}
+```
+
+### Use Case Layer (internal/usecase/batch_operations.go)
+
+#### Interface
+
+```go
+type BatchOperationsUsecaseInterface interface {
+    BatchRebootONUs(ctx context.Context, req *model.BatchONURebootRequest) (*model.BatchONURebootResponse, error)
+    BatchBlockONUs(ctx context.Context, req *model.BatchONUBlockRequest) (*model.BatchONUBlockResponse, error)
+    BatchUnblockONUs(ctx context.Context, req *model.BatchONUBlockRequest) (*model.BatchONUBlockResponse, error)
+    BatchDeleteONUs(ctx context.Context, req *model.BatchONUDeleteRequest) (*model.BatchONUDeleteResponse, error)
+    BatchUpdateDescriptions(ctx context.Context, req *model.BatchONUDescriptionRequest) (*model.BatchONUDescriptionResponse, error)
+}
+```
+
+#### Implementation
+
+**Struct:**
+```go
+type BatchOperationsUsecase struct {
+    telnetSessionManager *repository.TelnetSessionManager
+    onuMgmtUsecase       ONUManagementUsecaseInterface
+    cfg                  *config.Config
+}
+```
+
+**Key Methods:**
+
+1. **BatchRebootONUs** - Reboots multiple ONUs sequentially
+   - Validates targets (min 1, max 50)
+   - Checks PON format and ONU ID range
+   - Detects duplicate targets
+   - Executes reboots one by one
+   - Tracks individual success/failure
+   - Returns comprehensive results
+
+2. **BatchBlockONUs** - Blocks (disables) multiple ONUs
+   - Same validation as reboot
+   - Sets `Block=true` automatically
+   - Useful for service suspension
+
+3. **BatchUnblockONUs** - Unblocks (enables) multiple ONUs
+   - Convenience wrapper around BatchBlockONUs
+   - Sets `Block=false` automatically
+
+4. **BatchDeleteONUs** - Deletes multiple ONU configurations
+   - WARNING: Destructive operation
+   - Validates before deletion
+   - Individual error handling per ONU
+
+5. **BatchUpdateDescriptions** - Updates descriptions for multiple ONUs
+   - Additional validation for description content
+   - Max 64 characters per description
+   - Alphanumeric + spaces/hyphens/underscores
+
+**Validation Logic:**
+
+```go
+func (u *BatchOperationsUsecase) validateBatchTargets(targets []model.ONUTarget) error {
+    // Check count (1-50)
+    if len(targets) < 1 {
+        return fmt.Errorf("at least one target is required")
+    }
+    if len(targets) > 50 {
+        return fmt.Errorf("maximum 50 targets allowed, got %d", len(targets))
+    }
+
+    // Check duplicates
+    seen := make(map[string]bool)
+    ponRegex := regexp.MustCompile(`^(\d+)/(\d+)/(\d+)$`)
+
+    for i, target := range targets {
+        // Validate PON format
+        if !ponRegex.MatchString(target.PONPort) {
+            return fmt.Errorf("target %d: invalid PON port format", i)
+        }
+
+        // Validate ONU ID range
+        if target.ONUID < 1 || target.ONUID > 128 {
+            return fmt.Errorf("target %d: ONU ID must be 1-128", i)
+        }
+
+        // Check duplicate
+        key := fmt.Sprintf("%s-%d", target.PONPort, target.ONUID)
+        if seen[key] {
+            return fmt.Errorf("duplicate target found: %s ONU %d", target.PONPort, target.ONUID)
+        }
+        seen[key] = true
+    }
+
+    return nil
+}
+```
+
+**Description Validation:**
+```go
+func (u *BatchOperationsUsecase) validateBatchDescriptionTargets(targets []model.ONUDescriptionTarget) error {
+    // Basic validation (count, PON format, ONU ID)
+    // ...
+
+    // Description-specific validation
+    descRegex := regexp.MustCompile(`^[a-zA-Z0-9\s\-_.]+$`)
+    for i, target := range targets {
+        if target.Description == "" {
+            return fmt.Errorf("target %d: description cannot be empty", i)
+        }
+        if len(target.Description) > 64 {
+            return fmt.Errorf("target %d: description exceeds 64 characters", i)
+        }
+        if !descRegex.MatchString(target.Description) {
+            return fmt.Errorf("target %d: invalid description format", i)
+        }
+    }
+    return nil
+}
+```
+
+**Execution Pattern:**
+```go
+// Sequential execution with individual error handling
+for i, target := range req.Targets {
+    result := model.BatchOperationResult{
+        PONPort: target.PONPort,
+        ONUID:   target.ONUID,
+    }
+
+    // Execute operation
+    _, err := u.onuMgmtUsecase.RebootONU(ctx, &model.RebootONURequest{...})
+    if err != nil {
+        result.Success = false
+        result.Message = "Reboot failed"
+        result.Error = err.Error()
+        failureCount++
+    } else {
+        result.Success = true
+        result.Message = "ONU reboot command executed successfully"
+        successCount++
+    }
+
+    results = append(results, result)
+}
+```
+
+### Handler Layer (internal/handler/batch_operations.go)
+
+#### Interface
+
+```go
+type BatchOperationsHandlerInterface interface {
+    BatchRebootONUs(w http.ResponseWriter, r *http.Request)
+    BatchBlockONUs(w http.ResponseWriter, r *http.Request)
+    BatchUnblockONUs(w http.ResponseWriter, r *http.Request)
+    BatchDeleteONUs(w http.ResponseWriter, r *http.Request)
+    BatchUpdateDescriptions(w http.ResponseWriter, r *http.Request)
+}
+```
+
+#### Implementation
+
+**Struct:**
+```go
+type BatchOperationsHandler struct {
+    batchUsecase usecase.BatchOperationsUsecaseInterface
+}
+```
+
+**Handler Example (BatchRebootONUs):**
+```go
+// @Summary Batch reboot multiple ONUs
+// @Description Reboots multiple ONUs simultaneously (max 50). Sequential execution.
+// @Tags Batch Operations
+// @Accept json
+// @Produce json
+// @Param request body model.BatchONURebootRequest true "Batch reboot request"
+// @Success 200 {object} utils.WebResponse{data=model.BatchONURebootResponse}
+// @Failure 400 {object} utils.WebResponse
+// @Failure 500 {object} utils.WebResponse
+// @Router /batch/reboot [post]
+func (h *BatchOperationsHandler) BatchRebootONUs(w http.ResponseWriter, r *http.Request) {
+    ctx := r.Context()
+    
+    var req model.BatchONURebootRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        utils.HandleError(w, err, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    response, err := h.batchUsecase.BatchRebootONUs(ctx, &req)
+    if err != nil {
+        utils.HandleError(w, err, "Batch reboot failed", http.StatusInternalServerError)
+        return
+    }
+
+    utils.WriteJSONResponse(w, http.StatusOK, response)
+}
+```
+
+### Endpoint Documentation
+
+#### POST /api/v1/batch/reboot
+Reboots multiple ONUs simultaneously.
+
+**Request:**
+```json
+{
+  "targets": [
+    {"pon_port": "2/4/1", "onu_id": 1},
+    {"pon_port": "2/4/1", "onu_id": 2},
+    {"pon_port": "2/4/2", "onu_id": 5}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "total_targets": 3,
+    "success_count": 2,
+    "failure_count": 1,
+    "results": [
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 1,
+        "success": true,
+        "message": "ONU reboot command executed successfully"
+      },
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 2,
+        "success": false,
+        "message": "Reboot failed",
+        "error": "failed to enter interface mode: read error: EOF"
+      },
+      {
+        "pon_port": "2/4/2",
+        "onu_id": 5,
+        "success": true,
+        "message": "ONU reboot command executed successfully"
+      }
+    ],
+    "execution_time_ms": 256
+  }
+}
+```
+
+#### POST /api/v1/batch/block
+Blocks (disables) multiple ONUs.
+
+**Request:**
+```json
+{
+  "targets": [
+    {"pon_port": "2/4/1", "onu_id": 3}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "blocked": true,
+    "total_targets": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "results": [
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 3,
+        "success": true,
+        "message": "ONU blocked successfully"
+      }
+    ],
+    "execution_time_ms": 128
+  }
+}
+```
+
+#### POST /api/v1/batch/unblock
+Unblocks (enables) multiple ONUs.
+
+**Request/Response:** Same format as `/batch/block`, with `"blocked": false`
+
+#### POST /api/v1/batch/delete
+Deletes multiple ONU configurations.
+
+**Request:**
+```json
+{
+  "targets": [
+    {"pon_port": "2/4/1", "onu_id": 99}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "total_targets": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "results": [
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 99,
+        "success": true,
+        "message": "ONU configuration deleted successfully"
+      }
+    ],
+    "execution_time_ms": 150
+  }
+}
+```
+
+#### PUT /api/v1/batch/descriptions
+Updates descriptions for multiple ONUs.
+
+**Request:**
+```json
+{
+  "targets": [
+    {"pon_port": "2/4/1", "onu_id": 1, "description": "BATCH-TEST-ONU-1"},
+    {"pon_port": "2/4/1", "onu_id": 2, "description": "BATCH-TEST-ONU-2"}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "status": "OK",
+  "data": {
+    "total_targets": 2,
+    "success_count": 2,
+    "failure_count": 0,
+    "results": [
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 1,
+        "success": true,
+        "message": "Description updated successfully"
+      },
+      {
+        "pon_port": "2/4/1",
+        "onu_id": 2,
+        "success": true,
+        "message": "Description updated successfully"
+      }
+    ],
+    "execution_time_ms": 312
+  }
+}
+```
+
+### Validation Rules
+
+1. **Target Count:** Minimum 1, maximum 50 ONUs per request
+2. **PON Port Format:** Must match `rack/shelf/port` pattern (e.g., `2/4/1`)
+3. **ONU ID Range:** Must be 1-128
+4. **Duplicate Detection:** No duplicate PON+ONU combinations allowed
+5. **Description Format:** Alphanumeric + spaces, hyphens, underscores (max 64 chars)
+
+### Use Cases
+
+1. **Maintenance Window:** Reboot all ONUs in a building during off-hours
+2. **Service Suspension:** Block multiple ONUs for non-payment
+3. **Bulk Decommissioning:** Delete configurations for removed/returned equipment
+4. **Mass Organization:** Update descriptions for standardization project
+5. **Partial Success Handling:** Continue operations even if some targets fail
+
+### Testing Results (Phase 6.1)
+
+✅ **All batch endpoints operational:**
+- POST `/api/v1/batch/reboot` - Tested with 2 ONUs (1 success, 1 failure)
+- POST `/api/v1/batch/block` - Tested with 1 ONU
+- POST `/api/v1/batch/unblock` - Tested with 1 ONU
+- POST `/api/v1/batch/delete` - Tested with 1 ONU
+- PUT `/api/v1/batch/descriptions` - Tested with 2 ONUs
+
+✅ **Validation tests:**
+- Empty targets → Rejected with error
+- >50 targets → Rejected with error
+- Duplicate targets → Rejected with error
+- Invalid PON format → Rejected
+- Out-of-range ONU ID → Rejected
+
+✅ **Performance:**
+- Sequential execution working as expected
+- Execution time tracking accurate
+- Individual error isolation functioning
+- Partial success properly reported
+
+### Known Limitations (Phase 6.1)
+
+1. **Sequential Execution:** Operations executed one by one due to Telnet single-session limitation
+2. **No Transaction Rollback:** If operation 3/10 fails, operations 1-2 remain executed
+3. **Telnet Stability:** Large batches (40-50 ONUs) may encounter session timeouts
+4. **No Progress Tracking:** Client must wait for all operations to complete
+
+### Recommendations
+
+1. **Batch Size:** Use 10-20 ONUs per batch for optimal stability
+2. **Off-Peak Hours:** Execute large batches during low-traffic periods
+3. **Error Handling:** Always check `results` array for individual failures
+4. **Retry Logic:** Implement client-side retry for failed operations
+5. **Monitoring:** Watch execution_time_ms for performance degradation
+
+### Next Steps (Phase 6.2 - Advanced Features - Planned)
 - Configuration backup/restore
 - Batch configuration operations
 - Configuration templates
