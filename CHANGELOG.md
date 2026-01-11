@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed `routes_test.go` type mismatch for `trafficHandler` parameter
   - Changed from `*handler.TrafficHandler` to `handler.TrafficHandlerInterface` in all 7 test functions
   - Ensures strict type checking passes in GitHub Actions CI/CD
+- **CI/CD Trivy Security Scanner**
+  - Fixed hardcoded `:develop` tag in Trivy scan step
+  - Implemented dynamic tag detection based on branch/tag
+  - Main branch → scan `:latest`, develop branch → scan `:develop`, version tags → scan actual version
+  - Resolves `MANIFEST_UNKNOWN` error when scanning non-existent image tags
 
 ## [1.7.2] - 2026-01-12
 
