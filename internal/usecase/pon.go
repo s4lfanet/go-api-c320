@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gosnmp/gosnmp"
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	apperrors "github.com/s4lfanet/go-api-c320/internal/errors"
 	"github.com/s4lfanet/go-api-c320/internal/model"
 	"github.com/s4lfanet/go-api-c320/internal/repository"
-	"github.com/gosnmp/gosnmp"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -106,39 +106,4 @@ func (u *ponUsecase) GetPonPortInfo(ctx context.Context, boardID, ponID int) (*m
 	ponInfo.OnuCount = onuCount
 
 	return ponInfo, nil
-}
-
-// Helper function to get SNMP value as integer
-func (u *ponUsecase) getSNMPInt(oid string) (int, error) {
-	result, err := u.snmpRepository.Get([]string{oid})
-	if err != nil {
-		return 0, err
-	}
-	if len(result.Variables) == 0 {
-		return 0, fmt.Errorf("no data returned")
-	}
-	if val, ok := result.Variables[0].Value.(int); ok {
-		return val, nil
-	}
-	return 0, fmt.Errorf("value is not an integer")
-}
-
-// Helper function to get SNMP value as string
-func (u *ponUsecase) getSNMPString(oid string) (string, error) {
-	result, err := u.snmpRepository.Get([]string{oid})
-	if err != nil {
-		return "", err
-	}
-	if len(result.Variables) == 0 {
-		return "", fmt.Errorf("no data returned")
-	}
-	
-	switch v := result.Variables[0].Value.(type) {
-	case string:
-		return v, nil
-	case []byte:
-		return string(v), nil
-	default:
-		return fmt.Sprintf("%v", v), nil
-	}
 }

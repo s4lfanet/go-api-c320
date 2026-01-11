@@ -243,23 +243,3 @@ func (u *cardUsecase) GetCard(ctx context.Context, rack, shelf, slot int) (*mode
 
 	return card, nil
 }
-
-// getCardTypeName converts card type code to readable name
-func (u *cardUsecase) getCardTypeName(cardType int) string {
-	switch cardType {
-	case 1:
-		return "CTRL"
-	case 2:
-		return "GPON"
-	case 3:
-		return "EPON"
-	case 4:
-		return "GE"
-	case 5:
-		return "10GE"
-	case 6:
-		return "XGE"
-	default:
-		return fmt.Sprintf("type_%d", cardType)
-	}
-}
