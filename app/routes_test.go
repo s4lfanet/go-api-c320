@@ -227,10 +227,6 @@ func TestLoadRoutes_CORSHeaders(t *testing.T) {
 	}
 }
 
-		t.Errorf("Expected status %d, got %d", http.StatusOK, rr.Code)
-	}
-}
-
 func TestLoadRoutes_APIv1ProfileRoutes(t *testing.T) {
 	onuUsecase := &mockOnuUsecase{}
 	ponUsecase := &mockPonUsecase{}
@@ -339,3 +335,17 @@ func TestLoadRoutes_APIv1RouteNotFound(t *testing.T) {
 	trafficUsecase := usecase.NewTrafficUsecase(nil, nil)
 	trafficHandler := handler.NewTrafficHandler(trafficUsecase)
 	onuMgmtUsecase := usecase.NewONUManagementUsecase(nil, nil)
+	onuMgmtHandler := handler.NewONUManagementHandler(onuMgmtUsecase)
+	batchUsecase := usecase.NewBatchOperationsUsecase(nil, onuMgmtUsecase, nil)
+	batchHandler := handler.NewBatchOperationsHandler(batchUsecase)
+	router := loadRoutes(onuHandler, ponHandler, profileHandler, cardHandler, provisionHandler, vlanHandler, trafficHandler, onuMgmtHandler, batchHandler)
+
+	req := httptest.NewRequest("GET", "/api/v1/nonexistent", nil)
+	rr := httptest.NewRecorder()
+
+	router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("Expected status %d for non-existent route, got %d", http.StatusNotFound, rr.Code)
+	}
+}
