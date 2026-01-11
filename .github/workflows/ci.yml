@@ -52,6 +52,8 @@ jobs:
           govulncheck ./...
       
       - name: Run Unit Tests with Coverage
+        env:
+          CGO_ENABLED: 1
         run: go test -v -race -coverprofile=coverage.out -count=1 ./...
       
       - name: Upload Coverage Report to Codecov
