@@ -31,12 +31,6 @@ Understanding the system design and components.
   - Technology stack
   - Data flow
   
-- **[Workflow & Processes](architecture/WORKFLOW.md)** - How it works
-  - SNMP data collection
-  - Telnet command execution
-  - Caching strategy
-  - Error handling
-  
 - **[SNMP OID Mapping](architecture/OID_MAPPING.md)** - ZTE C320 V2.1.0 specifics
   - Available OIDs
   - Limitations (optical power)
@@ -51,36 +45,34 @@ Explore available functionality and capabilities.
   - Current capabilities
   - Future enhancements
   
-- **[API Reference](features/API_REFERENCE.md)** - Complete endpoint documentation
-  - 50+ REST endpoints
-  - Request/response examples
-  - Authentication & rate limiting
-  
-- **[Real-time Monitoring](features/MONITORING.md)** - Phase 7.1 & 7.2
-  - ONU monitoring with optical power
-  - PON port aggregation
-  - OLT-wide statistics
-  - Alert thresholds
+- **[Firmware V2.1.0 Support](features/FIRMWARE_V21_SUPPORT.md)** - Firmware-specific implementation
+  - SNMP limitations
+  - Telnet workarounds
+  - Optical power monitoring
+
+## 📡 API Reference
+
+Complete REST API documentation for frontend integration.
+
+- **[API Reference](api/API_REFERENCE.md)** - Full endpoint documentation
+  - 50+ REST endpoints with examples
+  - Request/response formats
+  - Error handling & status codes
+  - Rate limiting & CORS
+  - Authentication strategies
+  - Code examples (cURL, JavaScript, Python)
+  - Batch operations
+  - Real-time monitoring endpoints
 
 ## 🚢 Deployment
 
 Production deployment guides for various environments.
 
-- **[Docker Deployment](deployment/DOCKER.md)** - Containerized deployment
-  - docker-compose setup
-  - Environment variables
-  - Multi-container architecture
-  
-- **[VPS Deployment](deployment/VPS.md)** - Native Linux deployment
-  - Public VPS (DigitalOcean, AWS, etc.)
-  - Local VPS (Proxmox, VMware)
-  - Systemd service configuration
-  - Nginx reverse proxy
-  
-- **[Troubleshooting](deployment/TROUBLESHOOTING.md)** - Common issues & solutions
-  - Connection problems
-  - Performance tuning
-  - Debugging guide
+- **[Deployment Summary](deployment/DEPLOYMENT_SUMMARY.md)** - Overview of deployment options
+- **[Phase 7.2 Deployment](deployment/PHASE_7.2_DEPLOYMENT.md)** - Latest deployment (Optical Power Monitoring)
+  - Production VPS deployment
+  - Configuration details
+  - Testing results
 
 ## 👨‍💻 Development
 
@@ -91,15 +83,10 @@ For contributors and advanced users.
   - Pull request process
   - Testing requirements
   
-- **[Command Reference](development/COMMAND_REFERENCE.md)** - Telnet commands
-  - ZTE C320 CLI commands
-  - Configuration syntax
-  - Best practices
-  
-- **[Testing Guide](development/TESTING.md)** - Quality assurance
-  - Unit tests
-  - Integration tests
-  - Load testing with k6
+- **[Command Reference](development/COMMAND_REFERENCE.md)** - ZTE C320 Telnet commands
+  - CLI command syntax
+  - Configuration examples
+  - Best practices & tips
 
 ## 📖 Additional Resources
 
