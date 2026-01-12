@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/s4lfanet/go-api-c320/config"
 	"github.com/s4lfanet/go-api-c320/internal/model"
 	"github.com/s4lfanet/go-api-c320/internal/repository"
-	"github.com/rs/zerolog/log"
 )
 
 // ProvisionUseCaseInterface defines the interface for provisioning operations
@@ -118,10 +118,10 @@ func (u *ProvisionUsecase) parseUnconfiguredONUs(output string, filterPonPort st
 
 		matches := onuRegex.FindStringSubmatch(line)
 		if len(matches) >= 5 {
-			ponPort := matches[1]        // e.g., "1/1/1"
-			onuID := matches[2]          // e.g., "1"
-			serialNumber := matches[3]   // e.g., "HWTC1F14CAAD"
-			state := matches[4]          // e.g., "unknown"
+			ponPort := matches[1]      // e.g., "1/1/1"
+			onuID := matches[2]        // e.g., "1"
+			serialNumber := matches[3] // e.g., "HWTC1F14CAAD"
+			state := matches[4]        // e.g., "unknown"
 
 			// Filter by PON port if specified
 			if filterPonPort != "" && ponPort != filterPonPort {
@@ -140,7 +140,6 @@ func (u *ProvisionUsecase) parseUnconfiguredONUs(output string, filterPonPort st
 				SerialNumber: serialNumber,
 				Type:         onuType,
 				DiscoveredAt: time.Now().Format(time.RFC3339),
-				LOID:         "",  // V2.1.0 doesn't show LOID in uncfg list
 			})
 
 			log.Debug().

@@ -33,24 +33,22 @@ func (m *TelnetSessionManager) GetAllDBAProfiles(ctx context.Context) ([]model.D
 	commands := []string{
 		"show gpon profile tcont",           // Try ZTE standard
 		"show gpon-onu-profile dba-profile", // Try V2.2+ format
-		"show tcont",                         // Try short form
+		"show tcont",                        // Try short form
 	}
-	
-	var lastErr error
+
 	for _, cmd := range commands {
 		resp, err := m.ExecuteCommand(ctx, cmd)
 		if err != nil {
-			lastErr = err
 			continue
 		}
-		
+
 		// If command succeeded, try to parse
 		profiles := parseAllDBAProfiles(resp.Output)
 		if len(profiles) > 0 {
 			return profiles, nil
 		}
 	}
-	
+
 	// If all commands failed or returned empty, return empty list instead of error
 	// This is normal for unconfigured OLT
 	return []model.DBAProfileInfo{}, nil

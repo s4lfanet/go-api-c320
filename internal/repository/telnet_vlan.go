@@ -229,7 +229,7 @@ func (m *TelnetSessionManager) GetAllServicePorts(ctx context.Context) ([]model.
 	// V2.1.0: show service-port command doesn't work the same way
 	// Instead, we need to query each registered ONU individually
 	// For now, return empty array - this needs ONU iteration logic
-	
+
 	// Try the command anyway in case it's available
 	cmd := "show service-port"
 
@@ -241,12 +241,12 @@ func (m *TelnetSessionManager) GetAllServicePorts(ctx context.Context) ([]model.
 
 	// If no error, try to parse
 	ports := parseAllServicePorts(resp.Output)
-	
+
 	// If empty and command failed, return empty list instead of error
 	if len(ports) == 0 {
 		return []model.ONUVLANInfo{}, nil
 	}
-	
+
 	return ports, nil
 }
 
