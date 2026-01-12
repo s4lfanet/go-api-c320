@@ -102,7 +102,27 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=2.0.0
       
-      - name: Build & Push Docker Image
+      - name: Build Docker Image for Scanning (linux/amd64 only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:scan-temp
+          cache-from: type=gha
+      
+      - name: Scan Local Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:scan-temp
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+          exit-code: 0
+          scan-type: 'image'
+      
+      - name: Build & Push Multi-Platform Docker Image
         id: build
         uses: docker/build-push-action@v5
         with:
@@ -113,28 +133,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
-      - name: Determine Image Tag for Scanning
-        id: scan-tag
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "tag=develop" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.scan-tag.outputs.tag }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          ignore-unfixed: true
-          exit-code: 0
       
       - name: Check if trivy results file exists
         run: |
