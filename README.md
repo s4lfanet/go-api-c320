@@ -134,7 +134,17 @@ systemctl restart go-snmp-olt
 systemctl status go-snmp-olt
 ```
 
-📖 **Full Installation Guide:** [docs/INSTALLATION.md](docs/INSTALLATION.md)
+## 📚 Documentation
+
+Complete documentation available at **[docs/README.md](docs/README.md)**
+
+### Quick Links
+- 🚀 **[Quick Start Guide](docs/getting-started/QUICK_START.md)** - Deploy in 5 minutes
+- 📦 **[Installation Guide](docs/getting-started/INSTALLATION.md)** - Complete setup instructions
+- 🖥️ **[Proxmox Deployment](docs/getting-started/PROXMOX_GUIDE.md)** - Deploy on Proxmox CT/VM
+- 🏗️ **[Architecture Overview](docs/architecture/OVERVIEW.md)** - System design and components
+- 🎯 **[Feature Roadmap](docs/features/PHASES.md)** - Development phases and features
+- 💻 **[Command Reference](docs/development/COMMAND_REFERENCE.md)** - ZTE C320 Telnet commands
 
 ## 🌐 API Endpoints
 
@@ -300,6 +310,8 @@ curl -X POST http://localhost:8081/api/v1/onu-management/reboot \
   }'
 ```
 
+📖 **More examples in:** [docs/architecture/OVERVIEW.md](docs/architecture/OVERVIEW.md)
+
 ## ⚙️ Configuration
 
 All configuration via environment variables:
@@ -322,6 +334,8 @@ All configuration via environment variables:
 | `LOG_LEVEL` | info | Log level (debug/info/warn/error) |
 
 ## 🏗️ Architecture
+
+High-level system architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -355,6 +369,8 @@ All configuration via environment variables:
 └─────────────────────────────────────────────────────────┘
 ```
 
+📖 **Detailed architecture:** [docs/architecture/OVERVIEW.md](docs/architecture/OVERVIEW.md)
+
 ## 🧪 Testing
 
 Run tests:
@@ -368,12 +384,19 @@ go test ./... -coverprofile=coverage.out
 go tool cover -html=coverage.out
 ```
 
+📖 **Contributing guide:** [docs/development/CONTRIBUTING.md](docs/development/CONTRIBUTING.md)
+
 ## 📚 Documentation
 
-See `docs/` directory for:
-- [COMMAND_REFERENCE.md](docs/COMMAND_REFERENCE.md) - ZTE C320 Telnet commands
-- [TELNET_CONFIG_ROADMAP.md](docs/TELNET_CONFIG_ROADMAP.md) - Implementation roadmap
-- [PROJECT_STATE.md](docs/PROJECT_STATE.md) - Current project state & progress
+Complete documentation available at **[docs/README.md](docs/README.md)**
+
+### Quick Links
+- 🚀 **[Quick Start Guide](docs/getting-started/QUICK_START.md)** - Deploy in 5 minutes
+- 📦 **[Installation Guide](docs/getting-started/INSTALLATION.md)** - Complete setup instructions
+- 🖥️ **[Proxmox Deployment](docs/getting-started/PROXMOX_GUIDE.md)** - Deploy on Proxmox CT/VM
+- 🏗️ **[Architecture Overview](docs/architecture/OVERVIEW.md)** - System design and components
+- 🎯 **[Feature Roadmap](docs/features/PHASES.md)** - Development phases and features
+- 💻 **[Command Reference](docs/development/COMMAND_REFERENCE.md)** - ZTE C320 Telnet commands
 
 ## 🔒 Security
 
