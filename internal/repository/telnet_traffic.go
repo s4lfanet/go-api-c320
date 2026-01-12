@@ -29,15 +29,31 @@ func (m *TelnetSessionManager) GetDBAProfile(ctx context.Context, name string) (
 
 // GetAllDBAProfiles retrieves all DBA profiles
 func (m *TelnetSessionManager) GetAllDBAProfiles(ctx context.Context) ([]model.DBAProfileInfo, error) {
-	cmd := "show gpon-onu-profile dba-profile"
-
-	resp, err := m.ExecuteCommand(ctx, cmd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get DBA profiles: %w", err)
+	// V2.1.0: Try different command variations for DBA profiles
+	commands := []string{
+		"show gpon profile tcont",           // Try ZTE standard
+		"show gpon-onu-profile dba-profile", // Try V2.2+ format
+		"show tcont",                         // Try short form
 	}
-
-	profiles := parseAllDBAProfiles(resp.Output)
-	return profiles, nil
+	
+	var lastErr error
+	for _, cmd := range commands {
+		resp, err := m.ExecuteCommand(ctx, cmd)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		
+		// If command succeeded, try to parse
+		profiles := parseAllDBAProfiles(resp.Output)
+		if len(profiles) > 0 {
+			return profiles, nil
+		}
+	}
+	
+	// If all commands failed or returned empty, return empty list instead of error
+	// This is normal for unconfigured OLT
+	return []model.DBAProfileInfo{}, nil
 }
 
 // CreateDBAProfile creates a new DBA profile

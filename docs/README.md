@@ -2,6 +2,31 @@
 
 Comprehensive documentation for ZTE C320 OLT Management API with SNMP & Telnet integration.
 
+## 🎨 Frontend Dashboard
+
+Modern web dashboard for managing ZTE C320 OLT devices.
+
+- **[Frontend Roadmap](frontend/FRONTEND_ROADMAP.md)** - Development timeline & phases
+  - 7-phase development plan
+  - Features & deliverables
+  - Timeline & milestones
+  
+- **[Frontend Workload](frontend/FRONTEND_WORKLOAD.md)** - Task breakdown
+  - 346 hours estimated work
+  - Component-by-component tasks
+  - Time estimates
+  
+- **[Frontend Architecture](frontend/FRONTEND_ARCHITECTURE.md)** - Technical design
+  - Technology stack
+  - Component architecture
+  - State management strategy
+  - API integration patterns
+  
+- **[Development Guide](frontend/DEVELOPMENT_GUIDE.md)** - Quick reference
+  - Common commands
+  - Code examples
+  - Best practices
+
 ## 🚀 Getting Started
 
 Perfect for first-time users and quick deployment.

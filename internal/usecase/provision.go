@@ -98,26 +98,30 @@ func (u *ProvisionUsecase) GetAllUnconfiguredONUs(ctx context.Context) ([]model.
 func (u *ProvisionUsecase) parseUnconfiguredONUs(output string, filterPonPort string) []model.UnconfiguredONU {
 	onus := make([]model.UnconfiguredONU, 0)
 
-	// Output format:
-	// OltId              OnuId    Serial-Number   Password   Loid
-	// gpon-olt_1/1/1     N/A      ZTEGDA5918AC    N/A        N/A
-	// gpon-olt_1/1/1     N/A      ZTEGD824CDF3    N/A        N/A
+	// V2.1.0 Output format:
+	// OnuIndex                 Sn                  State
+	// ---------------------------------------------------------------------
+	// gpon-onu_1/1/1:1         HWTC1F14CAAD        unknown
+	// gpon-onu_1/1/1:2         ZTEGD824CDF3        unknown
+	// gpon-onu_1/1/1:3         ZTEGDA5918AC        unknown
 
 	lines := strings.Split(output, "\n")
 
-	// Regex to match ONU line: gpon-olt_X/X/X followed by N/A and serial number
-	onuRegex := regexp.MustCompile(`gpon-olt_(\d+/\d+/\d+)\s+N/A\s+([A-Z0-9]+)`)
+	// Regex to match ONU line: gpon-onu_X/X/X:Y (SerialNumber) (State)
+	onuRegex := regexp.MustCompile(`gpon-onu_(\d+/\d+/\d+):(\d+)\s+([A-Z0-9]+)\s+(\w+)`)
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "OltId") || strings.HasPrefix(line, "----") {
+		if line == "" || strings.HasPrefix(line, "OnuIndex") || strings.HasPrefix(line, "----") {
 			continue
 		}
 
 		matches := onuRegex.FindStringSubmatch(line)
-		if len(matches) >= 3 {
-			ponPort := matches[1]
-			serialNumber := matches[2]
+		if len(matches) >= 5 {
+			ponPort := matches[1]        // e.g., "1/1/1"
+			onuID := matches[2]          // e.g., "1"
+			serialNumber := matches[3]   // e.g., "HWTC1F14CAAD"
+			state := matches[4]          // e.g., "unknown"
 
 			// Filter by PON port if specified
 			if filterPonPort != "" && ponPort != filterPonPort {
@@ -136,7 +140,15 @@ func (u *ProvisionUsecase) parseUnconfiguredONUs(output string, filterPonPort st
 				SerialNumber: serialNumber,
 				Type:         onuType,
 				DiscoveredAt: time.Now().Format(time.RFC3339),
+				LOID:         "",  // V2.1.0 doesn't show LOID in uncfg list
 			})
+
+			log.Debug().
+				Str("pon", ponPort).
+				Str("onu_id", onuID).
+				Str("sn", serialNumber).
+				Str("state", state).
+				Msg("Parsed unconfigured ONU")
 		}
 	}
 

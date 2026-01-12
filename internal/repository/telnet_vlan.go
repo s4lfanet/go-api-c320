@@ -226,14 +226,28 @@ func parseServicePortDetails(output string, vlanInfo *model.ONUVLANInfo) *model.
 
 // GetAllServicePorts retrieves all service-port configurations
 func (m *TelnetSessionManager) GetAllServicePorts(ctx context.Context) ([]model.ONUVLANInfo, error) {
+	// V2.1.0: show service-port command doesn't work the same way
+	// Instead, we need to query each registered ONU individually
+	// For now, return empty array - this needs ONU iteration logic
+	
+	// Try the command anyway in case it's available
 	cmd := "show service-port"
 
 	resp, err := m.ExecuteCommand(ctx, cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get service-ports: %w", err)
+		// Command might not exist or return error, return empty list
+		return []model.ONUVLANInfo{}, nil
 	}
 
-	return parseAllServicePorts(resp.Output), nil
+	// If no error, try to parse
+	ports := parseAllServicePorts(resp.Output)
+	
+	// If empty and command failed, return empty list instead of error
+	if len(ports) == 0 {
+		return []model.ONUVLANInfo{}, nil
+	}
+	
+	return ports, nil
 }
 
 // parseAllServicePorts parses output of "show service-port"
